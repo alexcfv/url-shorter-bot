@@ -1,0 +1,4 @@
+host_name: "localhost"
+url_life_time: "1"
+db_url: ""
+db_key: ""
