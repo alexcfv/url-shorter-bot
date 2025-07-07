@@ -2,12 +2,18 @@ package main
 
 import (
 	"net/http"
+	"url-shorter-bot/pkg/app/handlers"
+	"url-shorter-bot/pkg/models"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
+	models.Config = models.ReadConfig()
+
 	r := mux.NewRouter()
 
-	http.ListenAndServe("8000", r)
+	r.HandleFunc("/short", handlers.HandlerUrlShort)
+
+	http.ListenAndServe(":8000", r)
 }
