@@ -10,6 +10,7 @@ import (
 
 func init() {
 	models.Config.HostName = "localhost"
+	models.Config.Port = "8000"
 }
 
 func TestHandlerUrlShort(t *testing.T) {

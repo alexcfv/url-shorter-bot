@@ -15,5 +15,5 @@ func main() {
 
 	r.HandleFunc("/short", handlers.HandlerUrlShort)
 
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":"+models.Config.Port, r)
 }

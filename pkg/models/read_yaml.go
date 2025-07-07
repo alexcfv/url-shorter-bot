@@ -9,6 +9,7 @@ import (
 
 type ConfigStruct struct {
 	HostName       string `yaml:"host_name"`
+	Port           string `yaml:"port"`
 	UrlLifeTime    string `yaml:"url_life_time"`
 	TelegramApiKey string `yaml:"tg_key"`
 	DatabasebUrl   string `yaml:"db_url"`
