@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"url-shorter-bot/pkg/models"
+
+	"github.com/gorilla/mux"
 )
 
 func init() {
@@ -72,6 +74,62 @@ func TestHandlerUrlShort(t *testing.T) {
 
 			if tt.expectedInBody != "" && !bytes.Contains([]byte(body), []byte(tt.expectedInBody)) {
 				t.Errorf("expected body to contain %q, got %q", tt.expectedInBody, body)
+			}
+		})
+	}
+}
+
+func TestHandlerHashUrl(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		url            string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "valid GET numeric URL",
+			method:         http.MethodGet,
+			url:            "/12345",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "12345",
+		},
+		{
+			name:           "invalid method POST",
+			method:         http.MethodPost,
+			url:            "/12345",
+			expectedStatus: http.StatusMethodNotAllowed,
+			expectedBody:   "must be only GET\n",
+		},
+		{
+			name:           "non-numeric URL - not matched by router",
+			method:         http.MethodGet,
+			url:            "/abc",
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "404 page not found\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := mux.NewRouter()
+			r.HandleFunc("/{url:[0-9]+}", HandlerHashUrl)
+
+			req := httptest.NewRequest(tt.method, tt.url, nil)
+			w := httptest.NewRecorder()
+
+			r.ServeHTTP(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+
+			body := w.Body.String()
+			if body != tt.expectedBody {
+				t.Errorf("expected body %q, got %q", tt.expectedBody, body)
 			}
 		})
 	}
