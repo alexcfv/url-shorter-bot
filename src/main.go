@@ -9,11 +9,12 @@ import (
 )
 
 func main() {
-	models.Config = models.ReadConfig()
+	models.ReadConfig()
 
 	r := mux.NewRouter()
 
 	r.HandleFunc("/short", handlers.HandlerUrlShort)
+	r.HandleFunc("/{url:[0-9]+}", handlers.HandlerHashUrl)
 
 	http.ListenAndServe(":"+models.Config.Port, r)
 }

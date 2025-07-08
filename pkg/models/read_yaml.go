@@ -16,7 +16,7 @@ type ConfigStruct struct {
 	DatabaseApiKey string `yaml:"db_key"`
 }
 
-func ReadConfig() ConfigStruct {
+func ReadConfig() {
 	yamlFile, err := os.ReadFile("config.yaml")
 	if err != nil {
 		log.Fatalf("Error read file: %v", err)
@@ -28,5 +28,5 @@ func ReadConfig() ConfigStruct {
 	if err != nil {
 		log.Fatalf("Error in decode yaml %v", err)
 	}
-	return yamlConfig
+	Config = yamlConfig
 }
