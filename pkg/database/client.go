@@ -71,7 +71,6 @@ func (c *client) Delete(table string, filter string) ([]byte, error) {
 	return handleResponse(resp, err)
 }
 
-// Устанавливает необходимые заголовки
 func (c *client) setHeaders(req *http.Request) {
 	req.Header.Set("apikey", c.apiKey)
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
