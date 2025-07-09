@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -32,6 +34,31 @@ func (m *mockCache) Get(key string) (interface{}, bool) {
 
 func (m *mockCache) Delete(key string) {
 	delete(m.data, key)
+}
+
+type mockSupabase struct {
+	data map[string]string
+}
+
+func (m *mockSupabase) Get(table string) ([]byte, error) {
+	return json.Marshal(m.data)
+}
+
+func (m *mockSupabase) Insert(table string, data interface{}) ([]byte, error) {
+	if m.data == nil {
+		m.data = map[string]string{}
+	}
+	mm, ok := data.(map[string]string)
+	if !ok {
+		return nil, fmt.Errorf("invalid format")
+	}
+	m.data[mm["hash"]] = mm["original_url"]
+	return json.Marshal(mm)
+}
+
+func (m *mockSupabase) Delete(table string, filter string) ([]byte, error) {
+	delete(m.data, "12345")
+	return []byte(`{}`), nil
 }
 
 func TestHandlerHashUrl(t *testing.T) {
@@ -68,7 +95,8 @@ func TestHandlerHashUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockCache{data: make(map[string]string)}
-			handler := NewHashedUrlHandler(mock)
+			db := &mockSupabase{data: make(map[string]string)}
+			handler := NewHashedUrlHandler(mock, db)
 
 			if strings.Contains(tt.name, "valid GET") {
 				mock.Set("12345", "https://yourdomain.com/12345", 10*time.Minute)

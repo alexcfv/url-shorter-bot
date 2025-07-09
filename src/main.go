@@ -5,6 +5,7 @@ import (
 	"time"
 	"url-shorter-bot/pkg/app/handlers"
 	"url-shorter-bot/pkg/cache"
+	"url-shorter-bot/pkg/database"
 	"url-shorter-bot/pkg/models"
 
 	"github.com/gorilla/mux"
@@ -13,8 +14,10 @@ import (
 func main() {
 	models.ReadConfig()
 
-	c := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
-	hashedUrlHandler := handlers.NewHashedUrlHandler(c)
+	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
+	database := database.NewClient(models.Config.DatabasebUrl, models.Config.DatabaseApiKey)
+
+	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database)
 
 	r := mux.NewRouter()
 
