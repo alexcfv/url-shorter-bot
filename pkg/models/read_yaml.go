@@ -9,13 +9,14 @@ import (
 
 type ConfigStruct struct {
 	HostName       string `yaml:"host_name"`
+	Port           string `yaml:"port"`
 	UrlLifeTime    string `yaml:"url_life_time"`
 	TelegramApiKey string `yaml:"tg_key"`
 	DatabasebUrl   string `yaml:"db_url"`
 	DatabaseApiKey string `yaml:"db_key"`
 }
 
-func ReadConfig() ConfigStruct {
+func ReadConfig() {
 	yamlFile, err := os.ReadFile("config.yaml")
 	if err != nil {
 		log.Fatalf("Error read file: %v", err)
@@ -27,5 +28,5 @@ func ReadConfig() ConfigStruct {
 	if err != nil {
 		log.Fatalf("Error in decode yaml %v", err)
 	}
-	return yamlConfig
+	Config = yamlConfig
 }

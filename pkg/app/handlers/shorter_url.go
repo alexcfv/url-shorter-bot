@@ -25,7 +25,7 @@ func HandlerUrlShort(w http.ResponseWriter, r *http.Request) {
 		hashUrl := validators.ShortToHash(reqData.Url)
 		hashUrlString := strconv.Itoa(int(hashUrl))
 
-		fmt.Fprintf(w, "http://%s:%s/%s", models.Config.HostName, "8000", hashUrlString)
+		fmt.Fprintf(w, "http://%s:%s/%s", models.Config.HostName, models.Config.Port, hashUrlString)
 	} else {
 		http.Error(w, "invalid URL", http.StatusUnsupportedMediaType)
 	}
