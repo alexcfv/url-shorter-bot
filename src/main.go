@@ -17,11 +17,12 @@ func main() {
 	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
 	database := database.NewClient(models.Config.DatabasebUrl, models.Config.DatabaseApiKey)
 
+	shorterUrlHandler := handlers.NewShortdUrlHandler(database)
 	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database)
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/short", handlers.HandlerUrlShort)
+	r.HandleFunc("/short", shorterUrlHandler.HandlerUrlShort)
 	r.HandleFunc("/{url:[0-9]+}", hashedUrlHandler.HandlerHashUrl)
 
 	http.ListenAndServe(":"+models.Config.Port, r)

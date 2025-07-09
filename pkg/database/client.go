@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type client struct {
@@ -22,12 +23,25 @@ func NewClient(baseURL, apiKey string) SupabaseClient {
 	}
 }
 
-func (c *client) Get(table string) ([]byte, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/rest/v1/%s", c.baseURL, table), nil)
+func (c *client) Get(table string, filters map[string]string) ([]byte, error) {
+	url := fmt.Sprintf("%s/rest/v1/%s", c.baseURL, table)
+
+	if len(filters) > 0 {
+		params := []string{}
+		for k, v := range filters {
+			params = append(params, fmt.Sprintf("%s=eq.%s", k, v))
+		}
+		url += "?" + strings.Join(params, "&")
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("Accept", "application/vnd.pgrst.object+json")
 	c.setHeaders(req)
+
 	resp, err := c.client.Do(req)
 	return handleResponse(resp, err)
 }
@@ -57,6 +71,7 @@ func (c *client) Delete(table string, filter string) ([]byte, error) {
 	return handleResponse(resp, err)
 }
 
+// Устанавливает необходимые заголовки
 func (c *client) setHeaders(req *http.Request) {
 	req.Header.Set("apikey", c.apiKey)
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
