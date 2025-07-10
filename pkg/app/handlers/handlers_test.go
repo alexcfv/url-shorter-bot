@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 	"url-shorter-bot/pkg/models"
@@ -34,32 +35,94 @@ func (m *mockCache) Delete(key string) {
 	delete(m.data, key)
 }
 
+type mockSupabase struct {
+	data map[string]string
+}
+
+func (m *mockSupabase) Get(table string, target map[string]string) ([]byte, error) {
+	key, ok := target["Hash"]
+	if !ok {
+		return nil, fmt.Errorf("missing filter key 'hash'")
+	}
+
+	val, exists := m.data[key]
+	if !exists {
+		return nil, fmt.Errorf("no record found for hash: %s", key)
+	}
+
+	result := map[string]string{
+		"Hash":         key,
+		"original_url": val,
+	}
+
+	return json.Marshal(result)
+}
+
+func (m *mockSupabase) Insert(table string, data interface{}) ([]byte, error) {
+	if m.data == nil {
+		m.data = map[string]string{}
+	}
+	u, ok := data.(models.Url)
+	if !ok {
+		return nil, fmt.Errorf("invalid format")
+	}
+	m.data[u.Hash] = u.Url
+	return json.Marshal(u)
+}
+
+func (m *mockSupabase) Delete(table string, filter string) ([]byte, error) {
+	delete(m.data, "12345")
+	return []byte(`{}`), nil
+}
+
 func TestHandlerHashUrl(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
 		url            string
+		setupCache     func(m *mockCache)
+		setupDB        func(db *mockSupabase)
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
-			name:           "valid GET numeric URL (not in cache)",
-			method:         http.MethodGet,
-			url:            "/12345",
+			name:   "valid GET — found in cache",
+			method: http.MethodGet,
+			url:    "/12345",
+			setupCache: func(m *mockCache) {
+				m.Set("12345", "https://cached-url.com", 10*time.Minute)
+			},
+			setupDB:        func(db *mockSupabase) {},
 			expectedStatus: http.StatusOK,
-			expectedBody:   "Fetched and cached: 12345",
+			expectedBody:   "From cache: https://cached-url.com",
+		},
+		{
+			name:   "valid GET — not in cache, found in Supabase",
+			method: http.MethodGet,
+			url:    "/67890",
+			setupCache: func(m *mockCache) {
+			},
+			setupDB: func(db *mockSupabase) {
+				db.data["67890"] = "https://supabase-url.com"
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   "Fetched and cached: https://supabase-url.com",
 		},
 		{
 			name:           "invalid method POST",
 			method:         http.MethodPost,
 			url:            "/12345",
+			setupCache:     func(m *mockCache) {},
+			setupDB:        func(db *mockSupabase) {},
 			expectedStatus: http.StatusMethodNotAllowed,
 			expectedBody:   "must be only GET\n",
 		},
 		{
-			name:           "non-numeric URL - not matched by router",
+			name:           "non-numeric URL — not matched",
 			method:         http.MethodGet,
 			url:            "/abc",
+			setupCache:     func(m *mockCache) {},
+			setupDB:        func(db *mockSupabase) {},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "404 page not found\n",
 		},
@@ -68,12 +131,12 @@ func TestHandlerHashUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockCache{data: make(map[string]string)}
-			handler := NewHashedUrlHandler(mock)
+			db := &mockSupabase{data: make(map[string]string)}
 
-			if strings.Contains(tt.name, "valid GET") {
-				mock.Set("12345", "https://yourdomain.com/12345", 10*time.Minute)
-				tt.expectedBody = "From cache: https://yourdomain.com/12345"
-			}
+			tt.setupCache(mock)
+			tt.setupDB(db)
+
+			handler := NewHashedUrlHandler(mock, db)
 
 			r := mux.NewRouter()
 			r.HandleFunc("/{url:[0-9]+}", handler.HandlerHashUrl)
@@ -110,7 +173,7 @@ func TestHandlerUrlShort(t *testing.T) {
 		{
 			name:           "valid POST with correct URL",
 			method:         http.MethodPost,
-			requestBody:    `{"url":"https://example.com"}`,
+			requestBody:    `{"Url":"https://example.com"}`,
 			expectedStatus: http.StatusOK,
 			expectedInBody: "http://localhost:8000/",
 		},
@@ -131,7 +194,7 @@ func TestHandlerUrlShort(t *testing.T) {
 		{
 			name:           "invalid URL inside JSON",
 			method:         http.MethodPost,
-			requestBody:    `{"url":"invalid-url"}`,
+			requestBody:    `{"Url":"invalid-url"}`,
 			expectedStatus: http.StatusUnsupportedMediaType,
 			expectedInBody: "invalid JSON body",
 		},
@@ -142,7 +205,13 @@ func TestHandlerUrlShort(t *testing.T) {
 			req := httptest.NewRequest(tt.method, "/short", bytes.NewBufferString(tt.requestBody))
 			w := httptest.NewRecorder()
 
-			HandlerUrlShort(w, req)
+			db := &mockSupabase{data: make(map[string]string)}
+			handler := NewShortdUrlHandler(db)
+
+			r := mux.NewRouter()
+			r.HandleFunc("/short", handler.HandlerUrlShort)
+
+			r.ServeHTTP(w, req)
 
 			resp := w.Result()
 			defer resp.Body.Close()
