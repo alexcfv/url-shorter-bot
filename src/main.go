@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -9,21 +10,60 @@ import (
 	"url-shorter-bot/pkg/cache"
 	"url-shorter-bot/pkg/database"
 	"url-shorter-bot/pkg/middleware"
+	"url-shorter-bot/pkg/migration"
 	"url-shorter-bot/pkg/models"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
-	//start server
+	//read yaml config
 	models.ReadConfig()
 
+	//data from config
 	databaseUrl := models.Config.DatabasebUrl
 	databaseApiKey := models.Config.DatabaseApiKey
 
 	if databaseApiKey == "" || databaseUrl == "" {
 		log.Fatal("❌ db_url or db_key is not set")
 	}
+
+	botToken := models.Config.TelegramApiKey
+
+	if botToken == "" {
+		log.Fatal("❌ tg_key is not set")
+	}
+
+	//migrations
+	migrator := migration.NewMigrator(databaseUrl, models.Config.DatabaseApiKey)
+
+	ok, err := migrator.TableExists("urls")
+	if err != nil {
+		log.Fatalf("failedcto check table: %v", err)
+	}
+
+	if !ok {
+		fmt.Println("Table `urls` does not exist. Creating...")
+		if err := migrator.CreateTable(); err != nil {
+			log.Fatalf("failed to create table: %v", err)
+		}
+		fmt.Println("Table created")
+	} else {
+		fmt.Println("Table already exists")
+	}
+
+	//start bot
+
+	state := bot.NewStateStore()
+
+	handler, err := bot.NewBotHandler(botToken, state)
+	if err != nil {
+		log.Fatalf("❌ Failed to create bot: %v", err)
+	}
+
+	go handler.Run()
+
+	//start server
 
 	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
 	database := database.NewClient(databaseUrl, databaseApiKey)
@@ -39,21 +79,4 @@ func main() {
 	r.Use(middleware.RateLimitMiddleware)
 
 	http.ListenAndServe(":"+models.Config.Port, r)
-
-	//start bot
-	botToken := models.Config.TelegramApiKey
-	apiURL := ""
-
-	if botToken == "" || apiURL == "" {
-		log.Fatal("❌ tg_key or tg_url is not set")
-	}
-
-	state := bot.NewStateStore()
-
-	handler, err := bot.NewBotHandler(botToken, apiURL, state)
-	if err != nil {
-		log.Fatalf("❌ Failed to create bot: %v", err)
-	}
-
-	go handler.Run()
 }

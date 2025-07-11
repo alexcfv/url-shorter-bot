@@ -11,17 +11,16 @@ import (
 )
 
 type BotHandler struct {
-	Bot    *tgbotapi.BotAPI
-	ApiURL string
-	State  *StateStore
+	Bot   *tgbotapi.BotAPI
+	State *StateStore
 }
 
-func NewBotHandler(token string, apiURL string, state *StateStore) (*BotHandler, error) {
+func NewBotHandler(token string, state *StateStore) (*BotHandler, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}
-	return &BotHandler{Bot: bot, ApiURL: apiURL, State: state}, nil
+	return &BotHandler{Bot: bot, State: state}, nil
 }
 
 func (h *BotHandler) Run() {
@@ -49,7 +48,7 @@ func (h *BotHandler) Run() {
 			case h.State.Get(chatID) == "awaiting_url":
 				h.State.Clear(chatID)
 				shortURL, err := h.shortenURL(text)
-				if err != nil {
+				if err != nil || shortURL == "" {
 					h.Bot.Send(tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL."))
 					continue
 				}
@@ -76,13 +75,11 @@ func (h *BotHandler) shortenURL(originalURL string) (string, error) {
 		return "", err
 	}
 
-	var result struct {
-		ShortURL string `json:"short_url"`
-	}
+	result := models.Respons{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return "", err
 	}
 
-	return result.ShortURL, nil
+	return result.Url, nil
 }
