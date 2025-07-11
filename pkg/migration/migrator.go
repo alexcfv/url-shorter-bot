@@ -79,7 +79,7 @@ func (m *SupabaseMigrator) CreateTable() error {
 	sql := `
 		CREATE TABLE IF NOT EXISTS urls (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-			"Hash" TEXT UNIQUE NOT NULL,
+			"Hash" TEXT NOT NULL,
 			"Url" TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT now()
 		);

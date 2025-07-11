@@ -52,8 +52,13 @@ func (h *BotHandler) Run() {
 					h.Bot.Send(tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL."))
 					continue
 				}
-				msg := tgbotapi.NewMessage(chatID, "✅ Shortened URL: "+shortURL)
-				h.Bot.Send(msg)
+				if shortURL == "Too Many Request" {
+					msg := tgbotapi.NewMessage(chatID, shortURL)
+					h.Bot.Send(msg)
+				} else {
+					msg := tgbotapi.NewMessage(chatID, "✅ Shortened URL: "+shortURL)
+					h.Bot.Send(msg)
+				}
 
 			default:
 				msg := tgbotapi.NewMessage(chatID, "❓ I don't understand. Use the button or type /start.")
@@ -71,8 +76,11 @@ func (h *BotHandler) shortenURL(originalURL string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusTooManyRequests {
 		return "", err
+	}
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return "Too Many Request", nil
 	}
 
 	result := models.Respons{}
