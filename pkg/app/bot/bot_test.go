@@ -11,7 +11,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// mockBotAPI реализует интерфейс TelegramBot
 type mockBotAPI struct {
 	sentMessages []tgbotapi.Chattable
 }
@@ -23,7 +22,7 @@ func (m *mockBotAPI) Send(c tgbotapi.Chattable) (tgbotapi.Message, error) {
 
 func (m *mockBotAPI) GetUpdatesChan(u tgbotapi.UpdateConfig) tgbotapi.UpdatesChannel {
 	ch := make(chan tgbotapi.Update)
-	close(ch) // пустой закрытый канал
+	close(ch)
 	return tgbotapi.UpdatesChannel(ch)
 }
 
