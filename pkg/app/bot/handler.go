@@ -11,7 +11,7 @@ import (
 )
 
 type BotHandler struct {
-	Bot   *tgbotapi.BotAPI
+	Bot   models.TelegramBot
 	State *StateStore
 }
 

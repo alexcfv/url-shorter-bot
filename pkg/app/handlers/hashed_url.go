@@ -39,7 +39,7 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 	}
 
 	valBytes, err := h.db.Get("urls", map[string]string{
-		"hash": hashUrl,
+		"Hash": hashUrl,
 	})
 	if err != nil {
 		http.Error(w, "Not found url", http.StatusBadRequest)
