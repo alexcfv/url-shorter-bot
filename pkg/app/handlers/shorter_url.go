@@ -39,7 +39,13 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 			http.Error(w, err.Error(), http.StatusMethodNotAllowed)
 			return
 		}
-		fmt.Fprintf(w, "http://%s:%s/%s", models.Config.HostName, models.Config.Port, hashUrlString)
+		response := models.Respons{
+			Url: fmt.Sprintf("http://%s:%s/%s", models.Config.HostName, models.Config.Port, hashUrlString),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
 	} else {
 		http.Error(w, "invalid URL", http.StatusUnsupportedMediaType)
 	}
