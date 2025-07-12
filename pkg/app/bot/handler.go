@@ -1,4 +1,3 @@
-// internal/bot/handler.go
 package bot
 
 import (
