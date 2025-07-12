@@ -1,0 +1,4 @@
+.git
+builds/
+*.sh
+README.md
