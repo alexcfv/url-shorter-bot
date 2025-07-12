@@ -29,4 +29,13 @@ func ReadConfig() {
 		log.Fatalf("Error in decode yaml %v", err)
 	}
 	Config = yamlConfig
+
+	switch Config.Port {
+	case "80":
+		Protocol = "http"
+	case "443":
+		Protocol = "https"
+	default:
+		log.Fatalln("Port must be only 80 or 443 because http and https use these ports")
+	}
 }

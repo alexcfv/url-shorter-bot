@@ -15,7 +15,8 @@ import (
 
 func init() {
 	models.Config.HostName = "localhost"
-	models.Config.Port = "8000"
+	models.Config.Port = "80"
+	models.Protocol = "http"
 }
 
 type mockCache struct {
@@ -175,7 +176,7 @@ func TestHandlerUrlShort(t *testing.T) {
 			method:         http.MethodPost,
 			requestBody:    `{"Url":"https://example.com"}`,
 			expectedStatus: http.StatusOK,
-			expectedInBody: "http://localhost:8000/",
+			expectedInBody: "http://localhost/",
 		},
 		{
 			name:           "invalid method GET",

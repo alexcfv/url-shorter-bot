@@ -23,3 +23,5 @@ type TelegramBot interface {
 type SupabaseResponse []Url
 
 var Config ConfigStruct
+
+var Protocol string

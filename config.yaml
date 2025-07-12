@@ -1,5 +1,5 @@
 host_name: "localhost"
-port: "8000"
+port: "80"
 tg_key: ""
 db_url: ""
 db_key: ""

@@ -40,7 +40,7 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 			return
 		}
 		response := models.Respons{
-			Url: fmt.Sprintf("http://%s:%s/%s", models.Config.HostName, models.Config.Port, hashUrlString),
+			Url: fmt.Sprintf("%s://%s/%s", models.Protocol, models.Config.HostName, hashUrlString),
 		}
 
 		w.Header().Set("Content-Type", "application/json")
