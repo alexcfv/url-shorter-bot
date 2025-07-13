@@ -37,19 +37,21 @@ func main() {
 	//migrations
 	migrator := migration.NewMigrator(databaseUrl, models.Config.DatabaseApiKey)
 
-	ok, err := migrator.TableExists("urls")
-	if err != nil {
-		log.Fatalf("failedcto check table: %v", err)
-	}
-
-	if !ok {
-		fmt.Println("Table `urls` does not exist. Creating...")
-		if err := migrator.CreateTable(); err != nil {
-			log.Fatalf("failed to create table: %v", err)
+	for table, request := range models.SqlRequests {
+		ok, err := migrator.TablesExists(table)
+		if err != nil {
+			log.Fatalf("failed to check table: %v", err)
 		}
-		fmt.Println("Table created")
-	} else {
-		fmt.Println("Table already exists")
+
+		if !ok {
+			fmt.Println("Table " + table + " does not exist. Creating...")
+			if err := migrator.CreateTable(table, request); err != nil {
+				log.Fatalf("failed to create tables: %v", err)
+			}
+			fmt.Println("Table " + table + " created")
+		} else {
+			fmt.Println("Table " + table + " already exists")
+		}
 	}
 
 	//start bot
