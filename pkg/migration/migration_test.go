@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"url-shorter-bot/pkg/models"
 )
 
 type testMigrator struct {
@@ -24,7 +25,7 @@ func newTestMigrator(projectUrl, apiKey string, client *http.Client) *testMigrat
 	}
 }
 
-func (m *testMigrator) TableExists(tableName string) (bool, error) {
+func (m *testMigrator) TablesExists(tableName string) (bool, error) {
 	url := fmt.Sprintf("%s/rest/v1/rpc/table_exists", m.ProjectUrl)
 
 	bodyData := map[string]string{"tbl": tableName}
@@ -39,7 +40,7 @@ func (m *testMigrator) TableExists(tableName string) (bool, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := m.Client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return false, err
 	}
@@ -58,17 +59,8 @@ func (m *testMigrator) TableExists(tableName string) (bool, error) {
 	return exists, nil
 }
 
-func (m *testMigrator) CreateTable() error {
-	sql := `
-		CREATE TABLE IF NOT EXISTS urls (
-			id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-			short TEXT UNIQUE NOT NULL,
-			original TEXT NOT NULL,
-			created_at TIMESTAMP DEFAULT now()
-		);
-	`
-
-	payload := map[string]string{"sql": sql}
+func (m *testMigrator) CreateTable(table, request string) error {
+	payload := map[string]string{"sql": request}
 	body, _ := json.Marshal(payload)
 
 	url := fmt.Sprintf("%s/rest/v1/rpc/execute_sql", m.ProjectUrl)
@@ -79,15 +71,14 @@ func (m *testMigrator) CreateTable() error {
 	req.Header.Set("apikey", m.ApiKey)
 	req.Header.Set("Authorization", "Bearer "+m.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := m.Client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("failed to create table: %s", resp.Status)
+		return fmt.Errorf("failed to create table %s: %s", table, resp.Status)
 	}
 	return nil
 }
@@ -138,7 +129,7 @@ func TestTableExists(t *testing.T) {
 
 			m := newTestMigrator(server.URL, "fake-key", server.Client())
 
-			result, err := m.TableExists(tt.tableName)
+			result, err := m.TablesExists(tt.tableName)
 
 			if (err != nil) != tt.expectError {
 				t.Errorf("expected error = %v, got %v", tt.expectError, err)
@@ -152,16 +143,22 @@ func TestTableExists(t *testing.T) {
 
 func TestCreateTable(t *testing.T) {
 	tests := []struct {
+		table       string
+		query       string
 		name        string
 		statusCode  int
 		expectError bool
 	}{
 		{
+			table:       "name",
+			query:       models.SqlRequests["urls"],
 			name:        "success",
 			statusCode:  200,
 			expectError: false,
 		},
 		{
+			table:       "name",
+			query:       models.SqlRequests["urls"],
 			name:        "supabase returns error",
 			statusCode:  500,
 			expectError: true,
@@ -178,7 +175,7 @@ func TestCreateTable(t *testing.T) {
 
 			m := newTestMigrator(server.URL, "fake-key", server.Client())
 
-			err := m.CreateTable()
+			err := m.CreateTable(tt.table, tt.query)
 			if (err != nil) != tt.expectError {
 				t.Errorf("expected error = %v, got %v", tt.expectError, err)
 			}
