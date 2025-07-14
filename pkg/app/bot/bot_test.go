@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +12,46 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+type mockSupabase struct {
+	data map[string]string
+}
+
+func (m *mockSupabase) Get(table string, target map[string]string) ([]byte, error) {
+	key, ok := target["Hash"]
+	if !ok {
+		return nil, fmt.Errorf("missing filter key 'hash'")
+	}
+
+	val, exists := m.data[key]
+	if !exists {
+		return nil, fmt.Errorf("no record found for hash: %s", key)
+	}
+
+	result := map[string]string{
+		"Hash":         key,
+		"original_url": val,
+	}
+
+	return json.Marshal(result)
+}
+
+func (m *mockSupabase) Insert(table string, data interface{}) ([]byte, error) {
+	if m.data == nil {
+		m.data = map[string]string{}
+	}
+	u, ok := data.(models.Url)
+	if !ok {
+		return nil, fmt.Errorf("invalid format")
+	}
+	m.data[u.Hash] = u.Url
+	return json.Marshal(u)
+}
+
+func (m *mockSupabase) Delete(table string, filter string) ([]byte, error) {
+	delete(m.data, "12345")
+	return []byte(`{}`), nil
+}
 
 type mockBotAPI struct {
 	sentMessages []tgbotapi.Chattable
@@ -78,6 +120,7 @@ func TestHandleMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockBot := &mockBotAPI{}
 			state := NewStateStore()
+			db := &mockSupabase{}
 
 			if tt.initialState != "" {
 				state.Set(12345, tt.initialState)
@@ -102,6 +145,7 @@ func TestHandleMessages(t *testing.T) {
 			handler := &BotHandler{
 				Bot:   mockBot,
 				State: state,
+				Db:    db,
 			}
 
 			update := tgbotapi.Update{
@@ -178,6 +222,7 @@ func TestRateLimitBehavior(t *testing.T) {
 func processMessage(h *BotHandler, update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	text := update.Message.Text
+	telegramID := update.Message.From.ID
 
 	switch {
 	case text == "/start":
@@ -192,7 +237,7 @@ func processMessage(h *BotHandler, update tgbotapi.Update) {
 
 	case h.State.Get(chatID) == "awaiting_url":
 		h.State.Clear(chatID)
-		shortURL, err := h.shortenURL(text)
+		shortURL, err := h.shortenURL(text, telegramID)
 		if err != nil || shortURL == "" {
 			h.Bot.Send(tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL."))
 			return

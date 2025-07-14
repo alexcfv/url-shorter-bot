@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,7 +16,8 @@ import (
 
 func init() {
 	models.Config.HostName = "localhost"
-	models.Config.Port = "8000"
+	models.Config.Port = "80"
+	models.Protocol = "http"
 }
 
 type mockCache struct {
@@ -37,6 +39,31 @@ func (m *mockCache) Delete(key string) {
 
 type mockSupabase struct {
 	data map[string]string
+}
+
+type mockLogger struct {
+	db *mockSupabase
+}
+
+func (l *mockLogger) LogAction(telegramID int64, action string) {
+	payload := models.LogAction{
+		Telegram_id: telegramID,
+		Action:      action,
+	}
+	if _, err := l.db.Insert("log_action", payload); err != nil {
+		log.Printf("log action failed: %v", err)
+	}
+}
+
+func (l *mockLogger) LogError(telegramID int64, errMsg, code string) {
+	payload := models.LogError{
+		Telegram_id: telegramID,
+		Error:       errMsg,
+		Error_code:  code,
+	}
+	if _, err := l.db.Insert("log_error", payload); err != nil {
+		log.Printf("log error failed: %v", err)
+	}
 }
 
 func (m *mockSupabase) Get(table string, target map[string]string) ([]byte, error) {
@@ -132,11 +159,12 @@ func TestHandlerHashUrl(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockCache{data: make(map[string]string)}
 			db := &mockSupabase{data: make(map[string]string)}
+			log := &mockLogger{db: db}
 
 			tt.setupCache(mock)
 			tt.setupDB(db)
 
-			handler := NewHashedUrlHandler(mock, db)
+			handler := NewHashedUrlHandler(mock, db, log)
 
 			r := mux.NewRouter()
 			r.HandleFunc("/{url:[0-9]+}", handler.HandlerHashUrl)
@@ -175,7 +203,7 @@ func TestHandlerUrlShort(t *testing.T) {
 			method:         http.MethodPost,
 			requestBody:    `{"Url":"https://example.com"}`,
 			expectedStatus: http.StatusOK,
-			expectedInBody: "http://localhost:8000/",
+			expectedInBody: "http://localhost/",
 		},
 		{
 			name:           "invalid method GET",
@@ -206,7 +234,9 @@ func TestHandlerUrlShort(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			db := &mockSupabase{data: make(map[string]string)}
-			handler := NewShortdUrlHandler(db)
+			log := &mockLogger{db: db}
+
+			handler := NewShortdUrlHandler(db, log)
 
 			r := mux.NewRouter()
 			r.HandleFunc("/short", handler.HandlerUrlShort)

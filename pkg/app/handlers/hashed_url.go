@@ -8,17 +8,20 @@ import (
 
 	"url-shorter-bot/pkg/cache"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
+	"url-shorter-bot/pkg/middleware"
 
 	"github.com/gorilla/mux"
 )
 
 type UrlHashHandler struct {
-	cache cache.Cache
-	db    database.SupabaseClient
+	cache  cache.Cache
+	db     database.SupabaseClient
+	logger logger.Logger
 }
 
-func NewHashedUrlHandler(c cache.Cache, db database.SupabaseClient) *UrlHashHandler {
-	return &UrlHashHandler{cache: c, db: db}
+func NewHashedUrlHandler(c cache.Cache, db database.SupabaseClient, log logger.Logger) *UrlHashHandler {
+	return &UrlHashHandler{cache: c, db: db, logger: log}
 }
 
 func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) {
@@ -27,8 +30,18 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	telegramIDValue := r.Context().Value(middleware.TelegramIDKey)
+	if telegramIDValue == nil {
+		http.Error(w, "No telegram_id in context", http.StatusInternalServerError)
+		return
+	}
+	telegramID := telegramIDValue.(int64)
+
+	h.logger.LogAction(telegramID, "go to shorten link")
+
 	hashUrl := mux.Vars(r)["url"]
 	if hashUrl == "" {
+		h.logger.LogError(telegramID, "missing hash url", "400")
 		http.Error(w, "missing hash url", http.StatusBadRequest)
 		return
 	}
@@ -42,6 +55,7 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		"Hash": hashUrl,
 	})
 	if err != nil {
+		h.logger.LogError(telegramID, err.Error(), "400")
 		http.Error(w, "Not found url", http.StatusBadRequest)
 		return
 	}
@@ -51,6 +65,7 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		OriginalUrl string `json:"original_url"`
 	}
 	if err := json.Unmarshal(valBytes, &result); err != nil {
+		h.logger.LogError(telegramID, err.Error(), "500")
 		http.Error(w, "invalid data from DB", http.StatusInternalServerError)
 		return
 	}

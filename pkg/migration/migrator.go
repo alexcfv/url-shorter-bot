@@ -75,17 +75,8 @@ func (m *SupabaseMigrator) TableExists(tableName string) (bool, error) {
 	return exists, nil
 }
 
-func (m *SupabaseMigrator) CreateTable() error {
-	sql := `
-		CREATE TABLE IF NOT EXISTS urls (
-			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-			"Hash" TEXT NOT NULL,
-			"Url" TEXT NOT NULL,
-			created_at TIMESTAMP DEFAULT now()
-		);
-	`
-
-	payload := map[string]string{"sql": sql}
+func (m *SupabaseMigrator) CreateTable(table, request string) error {
+	payload := map[string]string{"sql": request}
 	body, _ := json.Marshal(payload)
 
 	url := fmt.Sprintf("%s/rest/v1/rpc/execute_sql", m.ProjectUrl)
@@ -96,7 +87,6 @@ func (m *SupabaseMigrator) CreateTable() error {
 	req.Header.Set("apikey", m.ApiKey)
 	req.Header.Set("Authorization", "Bearer "+m.ApiKey)
 	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -104,7 +94,7 @@ func (m *SupabaseMigrator) CreateTable() error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("failed to create table: %s", resp.Status)
+		return fmt.Errorf("failed to create table %s: %s", table, resp.Status)
 	}
 	return nil
 }

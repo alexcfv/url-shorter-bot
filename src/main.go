@@ -9,6 +9,7 @@ import (
 	"url-shorter-bot/pkg/app/handlers"
 	"url-shorter-bot/pkg/cache"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
 	"url-shorter-bot/pkg/middleware"
 	"url-shorter-bot/pkg/migration"
 	"url-shorter-bot/pkg/models"
@@ -37,26 +38,33 @@ func main() {
 	//migrations
 	migrator := migration.NewMigrator(databaseUrl, models.Config.DatabaseApiKey)
 
-	ok, err := migrator.TableExists("urls")
-	if err != nil {
-		log.Fatalf("failedcto check table: %v", err)
+	for table, request := range models.SqlRequests {
+		ok, err := migrator.TableExists(table)
+		if err != nil {
+			log.Fatalf("failed to check table: %v", err)
+		}
+
+		if !ok {
+			fmt.Println("Table " + table + " does not exist. Creating...")
+			if err := migrator.CreateTable(table, request); err != nil {
+				log.Fatalf("failed to create tables: %v", err)
+			}
+			fmt.Println("Table " + table + " created")
+		} else {
+			fmt.Println("Table " + table + " already exists")
+		}
 	}
 
-	if !ok {
-		fmt.Println("Table `urls` does not exist. Creating...")
-		if err := migrator.CreateTable(); err != nil {
-			log.Fatalf("failed to create table: %v", err)
-		}
-		fmt.Println("Table created")
-	} else {
-		fmt.Println("Table already exists")
-	}
+	//important variablse
+	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
+	database := database.NewClient(databaseUrl, databaseApiKey)
+	logger := logger.NewDatabaseLogger(database)
 
 	//start bot
 
 	state := bot.NewStateStore()
 
-	handler, err := bot.NewBotHandler(botToken, state)
+	handler, err := bot.NewBotHandler(botToken, state, database)
 	if err != nil {
 		log.Fatalf("❌ Failed to create bot: %v", err)
 	}
@@ -65,11 +73,8 @@ func main() {
 
 	//start server
 
-	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
-	database := database.NewClient(databaseUrl, databaseApiKey)
-
-	shorterUrlHandler := handlers.NewShortdUrlHandler(database)
-	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database)
+	shorterUrlHandler := handlers.NewShortdUrlHandler(database, logger)
+	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database, logger)
 
 	r := mux.NewRouter()
 
@@ -77,6 +82,7 @@ func main() {
 	r.HandleFunc("/{url:[0-9]+}", hashedUrlHandler.HandlerHashUrl)
 
 	r.Use(middleware.RateLimitMiddleware)
+	r.Use(middleware.TelegramIDMiddleware)
 
 	http.ListenAndServe(":"+models.Config.Port, r)
 }

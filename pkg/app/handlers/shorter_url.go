@@ -7,15 +7,18 @@ import (
 	"strconv"
 	"url-shorter-bot/pkg/app/validators"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
+	"url-shorter-bot/pkg/middleware"
 	"url-shorter-bot/pkg/models"
 )
 
 type UrlShortHandler struct {
-	db database.SupabaseClient
+	db     database.SupabaseClient
+	logger logger.Logger
 }
 
-func NewShortdUrlHandler(db database.SupabaseClient) *UrlShortHandler {
-	return &UrlShortHandler{db: db}
+func NewShortdUrlHandler(db database.SupabaseClient, log logger.Logger) *UrlShortHandler {
+	return &UrlShortHandler{db: db, logger: log}
 }
 
 func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request) {
@@ -24,8 +27,18 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	telegramIDValue := r.Context().Value(middleware.TelegramIDKey)
+	if telegramIDValue == nil {
+		http.Error(w, "No telegram_id in context", http.StatusInternalServerError)
+		return
+	}
+	telegramID := telegramIDValue.(int64)
+
+	h.logger.LogAction(telegramID, "shortened link")
+
 	var reqData models.RequestData
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil || !validators.IsValidURL(reqData.Url) {
+		h.logger.LogError(telegramID, err.Error(), "415")
 		http.Error(w, "invalid JSON body", http.StatusUnsupportedMediaType)
 		return
 	}
@@ -36,11 +49,12 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 
 		_, err := h.db.Insert("urls", models.Url{Hash: hashUrlString, Url: reqData.Url})
 		if err != nil {
+			h.logger.LogError(telegramID, err.Error(), "405")
 			http.Error(w, err.Error(), http.StatusMethodNotAllowed)
 			return
 		}
 		response := models.Respons{
-			Url: fmt.Sprintf("http://%s:%s/%s", models.Config.HostName, models.Config.Port, hashUrlString),
+			Url: fmt.Sprintf("%s://%s/%s", models.Protocol, models.Config.HostName, hashUrlString),
 		}
 
 		w.Header().Set("Content-Type", "application/json")
