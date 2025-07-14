@@ -1,5 +1,5 @@
 host_name: "localhost"
 port: "80"
-tg_key: "8001515202:AAGvzXtfSE4Mdn6Ohj04hOzHwNwCBHOL_5U"
-db_url: "https://gsuvpxjoiupbpuwwllaj.supabase.co"
-db_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzdXZweGpvaXVwYnB1d3dsbGFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1NDQ2OTYsImV4cCI6MjA2NTEyMDY5Nn0.-ZioiJFII-Nnin6jdVgvs71Sha_OiDehkbUlf5yhbOk"
+tg_key: ""
+db_url: ""
+db_key: ""
