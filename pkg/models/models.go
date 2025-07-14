@@ -27,7 +27,7 @@ type LogError struct {
 }
 
 type Users struct {
-	Telegram_id string
+	Telegram_id int64
 	Nick_Name   string
 }
 

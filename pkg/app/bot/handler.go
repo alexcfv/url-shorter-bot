@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"url-shorter-bot/pkg/database"
 	"url-shorter-bot/pkg/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -12,14 +13,15 @@ import (
 type BotHandler struct {
 	Bot   models.TelegramBot
 	State *StateStore
+	Db    database.SupabaseClient
 }
 
-func NewBotHandler(token string, state *StateStore) (*BotHandler, error) {
+func NewBotHandler(token string, state *StateStore, db database.SupabaseClient) (*BotHandler, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}
-	return &BotHandler{Bot: bot, State: state}, nil
+	return &BotHandler{Bot: bot, State: state, Db: db}, nil
 }
 
 func (h *BotHandler) Run() {
@@ -35,6 +37,17 @@ func (h *BotHandler) Run() {
 
 			switch {
 			case text == "/start":
+				telegramID := update.Message.From.ID
+				username := update.Message.From.UserName
+
+				_, err := h.Db.Insert("users", models.Users{
+					Telegram_id: telegramID,
+					Nick_Name:   username,
+				})
+				if err != nil {
+					return
+				}
+
 				msg := tgbotapi.NewMessage(chatID, "👋 Welcome! Click the button below to shorten a URL.")
 				msg.ReplyMarkup = UrlShortenKeyboard()
 				h.Bot.Send(msg)

@@ -55,11 +55,16 @@ func main() {
 		}
 	}
 
+	//important variablse
+	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
+	database := database.NewClient(databaseUrl, databaseApiKey)
+	logger := logger.NewDatabaseLogger(database)
+
 	//start bot
 
 	state := bot.NewStateStore()
 
-	handler, err := bot.NewBotHandler(botToken, state)
+	handler, err := bot.NewBotHandler(botToken, state, database)
 	if err != nil {
 		log.Fatalf("❌ Failed to create bot: %v", err)
 	}
@@ -68,12 +73,8 @@ func main() {
 
 	//start server
 
-	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
-	database := database.NewClient(databaseUrl, databaseApiKey)
-	log := logger.NewDatabaseLogger(database)
-
-	shorterUrlHandler := handlers.NewShortdUrlHandler(database, log)
-	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database, log)
+	shorterUrlHandler := handlers.NewShortdUrlHandler(database, logger)
+	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database, logger)
 
 	r := mux.NewRouter()
 
