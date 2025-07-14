@@ -39,7 +39,7 @@ func main() {
 	migrator := migration.NewMigrator(databaseUrl, models.Config.DatabaseApiKey)
 
 	for table, request := range models.SqlRequests {
-		ok, err := migrator.TablesExists(table)
+		ok, err := migrator.TableExists(table)
 		if err != nil {
 			log.Fatalf("failed to check table: %v", err)
 		}
@@ -82,6 +82,7 @@ func main() {
 	r.HandleFunc("/{url:[0-9]+}", hashedUrlHandler.HandlerHashUrl)
 
 	r.Use(middleware.RateLimitMiddleware)
+	r.Use(middleware.TelegramIDMiddleware)
 
 	http.ListenAndServe(":"+models.Config.Port, r)
 }

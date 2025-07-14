@@ -37,19 +37,19 @@ type TelegramBot interface {
 }
 
 var SqlRequests = map[string]string{
+	"users": `
+	CREATE TABLE IF NOT EXISTS users (
+		uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+		"Nick_Name" TEXT NOT NULL,
+		"Telegram_id" BIGINT NOT NULL,
+		created_at TIMESTAMP DEFAULT now()
+	);
+	`,
 	"urls": `
 		CREATE TABLE IF NOT EXISTS urls (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
 			"Hash" TEXT NOT NULL,
 			"Url" TEXT NOT NULL,
-			created_at TIMESTAMP DEFAULT now()
-		);
-	`,
-	"users": `
-		CREATE TABLE IF NOT EXISTS users (
-			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-			"Nick_Name" TEXT NOT NULL,
-			"Telegram_id" TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT now()
 		);
 	`,

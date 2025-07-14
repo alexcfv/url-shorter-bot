@@ -222,6 +222,7 @@ func TestRateLimitBehavior(t *testing.T) {
 func processMessage(h *BotHandler, update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	text := update.Message.Text
+	telegramID := update.Message.From.ID
 
 	switch {
 	case text == "/start":
@@ -236,7 +237,7 @@ func processMessage(h *BotHandler, update tgbotapi.Update) {
 
 	case h.State.Get(chatID) == "awaiting_url":
 		h.State.Clear(chatID)
-		shortURL, err := h.shortenURL(text)
+		shortURL, err := h.shortenURL(text, telegramID)
 		if err != nil || shortURL == "" {
 			h.Bot.Send(tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL."))
 			return

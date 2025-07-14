@@ -41,7 +41,7 @@ func NewMigrator(projectUrl, apiKey string) *SupabaseMigrator {
 	}
 }
 
-func (m *SupabaseMigrator) TablesExists(tableName string) (bool, error) {
+func (m *SupabaseMigrator) TableExists(tableName string) (bool, error) {
 	url := fmt.Sprintf("%s/rest/v1/rpc/table_exists", m.ProjectUrl)
 
 	bodyData := map[string]string{"tbl": tableName}
