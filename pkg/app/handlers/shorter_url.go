@@ -7,15 +7,17 @@ import (
 	"strconv"
 	"url-shorter-bot/pkg/app/validators"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
 	"url-shorter-bot/pkg/models"
 )
 
 type UrlShortHandler struct {
-	db database.SupabaseClient
+	db     database.SupabaseClient
+	logger logger.Logger
 }
 
-func NewShortdUrlHandler(db database.SupabaseClient) *UrlShortHandler {
-	return &UrlShortHandler{db: db}
+func NewShortdUrlHandler(db database.SupabaseClient, log logger.Logger) *UrlShortHandler {
+	return &UrlShortHandler{db: db, logger: log}
 }
 
 func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request) {

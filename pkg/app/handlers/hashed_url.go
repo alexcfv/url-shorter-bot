@@ -8,17 +8,19 @@ import (
 
 	"url-shorter-bot/pkg/cache"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
 
 	"github.com/gorilla/mux"
 )
 
 type UrlHashHandler struct {
-	cache cache.Cache
-	db    database.SupabaseClient
+	cache  cache.Cache
+	db     database.SupabaseClient
+	logger logger.Logger
 }
 
-func NewHashedUrlHandler(c cache.Cache, db database.SupabaseClient) *UrlHashHandler {
-	return &UrlHashHandler{cache: c, db: db}
+func NewHashedUrlHandler(c cache.Cache, db database.SupabaseClient, log logger.Logger) *UrlHashHandler {
+	return &UrlHashHandler{cache: c, db: db, logger: log}
 }
 
 func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,7 @@ import (
 	"url-shorter-bot/pkg/app/handlers"
 	"url-shorter-bot/pkg/cache"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
 	"url-shorter-bot/pkg/middleware"
 	"url-shorter-bot/pkg/migration"
 	"url-shorter-bot/pkg/models"
@@ -69,9 +70,10 @@ func main() {
 
 	cache := cache.NewMemoryCache(10*time.Minute, 20*time.Minute)
 	database := database.NewClient(databaseUrl, databaseApiKey)
+	log := logger.NewDatabaseLogger(database)
 
-	shorterUrlHandler := handlers.NewShortdUrlHandler(database)
-	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database)
+	shorterUrlHandler := handlers.NewShortdUrlHandler(database, log)
+	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database, log)
 
 	r := mux.NewRouter()
 

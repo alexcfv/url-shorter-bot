@@ -15,6 +15,17 @@ type Url struct {
 	Url  string
 }
 
+type LogAction struct {
+	Telegram_id int64  `json:"Telegram_id"`
+	Action      string `json:"Action"`
+}
+
+type LogError struct {
+	Telegram_id int64  `json:"Telegram_id"`
+	Error       string `json:"Error"`
+	Error_code  string `json:"Error_code"`
+}
+
 type Users struct {
 	Telegram_id string
 	Nick_Name   string
@@ -45,16 +56,17 @@ var SqlRequests = map[string]string{
 	"log_action": `
 		CREATE TABLE IF NOT EXISTS log_action (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-			"Error" TEXT NOT NULL,
-			"Error_code" TEXT NOT NULL,
+			"Telegram_id" BIGINT NOT NULL,
+			"Action" TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT now()
 		);
 	`,
 	"log_error": `
 		CREATE TABLE IF NOT EXISTS log_error (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-			"Nick_Name" TEXT NOT NULL,
-			"Telegram_id" TEXT NOT NULL,
+			"Telegram_id" BIGINT NOT NULL,
+			"Error" TEXT NOT NULL,
+			"Error_code" TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT now()
 		);
 	`}
