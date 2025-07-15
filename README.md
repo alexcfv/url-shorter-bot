@@ -24,6 +24,30 @@
 
 ---
 
+## ⚙️ Преднастройка базы данных
+
+Перейди в SQL Editor и вставь туда этот код
+
+```bash
+create or replace function table_exists(tbl text)
+returns boolean
+language plpgsql
+as $$
+begin
+  return exists (
+    select from pg_tables
+    where tablename = tbl
+  );
+end;
+$$;
+
+grant execute on function table_exists(text) to service_role;
+```
+
+Он разрешает создание таблиц через RPC
+
+---
+
 ## 🚀 Запуск
 
 Бот может быть запущен двумя способами: через YAML вручную или через Docker.
