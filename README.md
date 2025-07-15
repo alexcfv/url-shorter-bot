@@ -58,7 +58,7 @@ grant execute on function table_exists(text) to service_role;
 
 ```yaml
 host_name: "YOUR_HOST_NAME"         # По умолчанию: "localhost"
-port: "YOUR_PORT"                   # Одно из двух: "80" (для HTTP) или "443" (для HTTPS)
+port: "YOUR_PORT"                   # По умолчанию: "80" (Может быть только одно из двух: "80" для HTTP или "443" для HTTPS)
 tg_key: "YOUR_TELEGRAM_TOKEN"
 db_url: "YOUR_SUPABASE_URL"
 db_key: "YOUR_SUPABASE_API_KEY"
