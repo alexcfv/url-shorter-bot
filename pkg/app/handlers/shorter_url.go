@@ -27,6 +27,11 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "invalid content type", http.StatusUnsupportedMediaType)
+		return
+	}
+
 	telegramIDValue := r.Context().Value(middleware.TelegramIDKey)
 	if telegramIDValue == nil {
 		http.Error(w, "No telegram_id in context", http.StatusInternalServerError)
@@ -37,14 +42,14 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 	h.logger.LogAction(telegramID, "shortened link")
 
 	var reqData models.RequestData
-	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil || !validators.IsValidURL(reqData.Url) {
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
 		h.logger.LogError(telegramID, err.Error(), "415")
 		http.Error(w, "invalid JSON body", http.StatusUnsupportedMediaType)
 		return
 	}
 
 	if ok := validators.IsValidURL(reqData.Url); ok {
-		hashUrl := validators.ShortToHash(reqData.Url)
+		hashUrl := validators.ShortToHash(reqData.Url + strconv.Itoa(int(telegramID)))
 		hashUrlString := strconv.Itoa(int(hashUrl))
 
 		_, err := h.db.Insert("urls", models.Url{Hash: hashUrlString, Url: reqData.Url})

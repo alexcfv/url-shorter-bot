@@ -72,17 +72,17 @@ func main() {
 	go handler.Run()
 
 	//start server
+	go middleware.CleanupVisitors()
 
 	shorterUrlHandler := handlers.NewShortdUrlHandler(database, logger)
 	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database, logger)
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/short", shorterUrlHandler.HandlerUrlShort)
-	r.HandleFunc("/{url:[0-9]+}", hashedUrlHandler.HandlerHashUrl)
+	go r.Handle("/short", middleware.TelegramIDMiddleware(http.HandlerFunc(shorterUrlHandler.HandlerUrlShort)))
+	go r.HandleFunc("/{url:[0-9]+}", hashedUrlHandler.HandlerHashUrl)
 
 	r.Use(middleware.RateLimitMiddleware)
-	r.Use(middleware.TelegramIDMiddleware)
 
 	http.ListenAndServe(":"+models.Config.Port, r)
 }
