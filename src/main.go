@@ -15,6 +15,7 @@ import (
 	"url-shorter-bot/pkg/models"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 func main() {
@@ -74,6 +75,10 @@ func main() {
 	//start server
 	go middleware.CleanupVisitors()
 
+	port := models.Config.Port
+	addr := ":" + port
+	domain := models.Config.HostName
+
 	shorterUrlHandler := handlers.NewShortdUrlHandler(database, logger)
 	hashedUrlHandler := handlers.NewHashedUrlHandler(cache, database, logger)
 
@@ -83,6 +88,43 @@ func main() {
 	go r.HandleFunc("/{url:[0-9]+}", hashedUrlHandler.HandlerHashUrl)
 
 	r.Use(middleware.RateLimitMiddleware)
+
+	switch port {
+	case "443":
+		if domain == "" {
+			log.Fatal("❌ Domain must be set in config.yaml for HTTPS via autocert")
+		}
+
+		certManager := &autocert.Manager{
+			Cache:      autocert.DirCache("certs"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(domain),
+		}
+
+		go func() {
+			err := http.ListenAndServe(":80", certManager.HTTPHandler(nil))
+			if err != nil {
+				log.Fatalf("❌ HTTP challenge server failed: %v", err)
+			}
+		}()
+
+		server := &http.Server{
+			Addr:      ":443",
+			Handler:   r,
+			TLSConfig: certManager.TLSConfig(),
+		}
+
+		if err := server.ListenAndServeTLS("", ""); err != nil {
+			log.Fatalf("❌ HTTPS server failed: %v", err)
+		}
+
+	case "80":
+		if err := http.ListenAndServe(addr, r); err != nil {
+			log.Fatalf("❌ HTTP server failed: %v", err)
+		}
+	default:
+		log.Fatalf("❌ Unsupported port: %s. Only 80 and 443 are allowed.", port)
+	}
 
 	http.ListenAndServe(":"+models.Config.Port, r)
 }

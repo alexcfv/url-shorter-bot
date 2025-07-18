@@ -11,8 +11,6 @@ fi
 HOST_NAME=${HOST_NAME:-localhost}
 PORT=${PORT:-80} #for http - 80, for https - 443
 
-CONTAINER_PORT=8080
-
 cat > config.yaml <<EOF
 host_name: "$HOST_NAME"
 port: "$PORT"
@@ -25,4 +23,4 @@ echo "✅ Generated config.yaml"
 
 docker build -t url-shortener-bot -f builds/Dockerfile .
 
-docker run --rm -p "$PORT":"$CONTAINER_PORT" url-shortener-bot
+docker run --rm -p "$PORT":"$PORT" url-shortener-bot
