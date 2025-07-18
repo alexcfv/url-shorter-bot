@@ -2,14 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"url-shorter-bot/pkg/cache"
 	"url-shorter-bot/pkg/database"
 	"url-shorter-bot/pkg/logger"
-	"url-shorter-bot/pkg/middleware"
+	"url-shorter-bot/pkg/models"
 
 	"github.com/gorilla/mux"
 )
@@ -30,24 +29,20 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	telegramIDValue := r.Context().Value(middleware.TelegramIDKey)
-	if telegramIDValue == nil {
-		http.Error(w, "No telegram_id in context", http.StatusInternalServerError)
-		return
-	}
-	telegramID := telegramIDValue.(int64)
-
-	h.logger.LogAction(telegramID, "go to shorten link")
-
 	hashUrl := mux.Vars(r)["url"]
 	if hashUrl == "" {
-		h.logger.LogError(telegramID, "missing hash url", "400")
 		http.Error(w, "missing hash url", http.StatusBadRequest)
 		return
 	}
 
-	if val, found := h.cache.Get(hashUrl); found {
-		fmt.Fprintf(w, "From cache: %s", val)
+	if cachedUrl, ok := h.cache.Get(hashUrl); ok {
+		cachedUrlString, ok := cachedUrl.(string)
+		if !ok {
+			http.Error(w, "Error", http.StatusBadRequest)
+			return
+		}
+
+		http.Redirect(w, r, cachedUrlString, http.StatusFound)
 		return
 	}
 
@@ -55,21 +50,18 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		"Hash": hashUrl,
 	})
 	if err != nil {
-		h.logger.LogError(telegramID, err.Error(), "400")
 		http.Error(w, "Not found url", http.StatusBadRequest)
 		return
 	}
 
-	var result struct {
-		Hash        string `json:"hash"`
-		OriginalUrl string `json:"original_url"`
-	}
+	var result models.Url
+
 	if err := json.Unmarshal(valBytes, &result); err != nil {
-		h.logger.LogError(telegramID, err.Error(), "500")
 		http.Error(w, "invalid data from DB", http.StatusInternalServerError)
 		return
 	}
 
-	h.cache.Set(hashUrl, result.OriginalUrl, 10*time.Minute)
-	fmt.Fprintf(w, "Fetched and cached: %s", result.OriginalUrl)
+	h.cache.Set(hashUrl, result.Url, 10*time.Minute)
+
+	http.Redirect(w, r, result.Url, http.StatusFound)
 }

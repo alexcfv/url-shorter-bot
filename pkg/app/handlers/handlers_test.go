@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"url-shorter-bot/pkg/middleware"
 	"url-shorter-bot/pkg/models"
 
 	"github.com/gorilla/mux"
@@ -39,68 +40,43 @@ func (m *mockCache) Delete(key string) {
 
 type mockSupabase struct {
 	data map[string]string
+	bad  bool
+}
+
+func (m *mockSupabase) Get(table string, target map[string]string) ([]byte, error) {
+	hash := target["Hash"]
+	if m.bad {
+		return []byte(`{malformed_json}`), nil
+	}
+	val, ok := m.data[hash]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	return json.Marshal(models.Url{
+		Hash: hash,
+		Url:  val,
+	})
+}
+
+func (m *mockSupabase) Insert(table string, data interface{}) ([]byte, error) {
+	u, ok := data.(models.Url)
+	if !ok {
+		return nil, fmt.Errorf("invalid insert format")
+	}
+	m.data[u.Hash] = u.Url
+	return json.Marshal(u)
+}
+
+func (m *mockSupabase) Delete(table, filter string) ([]byte, error) {
+	return []byte(`{}`), nil
 }
 
 type mockLogger struct {
 	db *mockSupabase
 }
 
-func (l *mockLogger) LogAction(telegramID int64, action string) {
-	payload := models.LogAction{
-		Telegram_id: telegramID,
-		Action:      action,
-	}
-	if _, err := l.db.Insert("log_action", payload); err != nil {
-		log.Printf("log action failed: %v", err)
-	}
-}
-
-func (l *mockLogger) LogError(telegramID int64, errMsg, code string) {
-	payload := models.LogError{
-		Telegram_id: telegramID,
-		Error:       errMsg,
-		Error_code:  code,
-	}
-	if _, err := l.db.Insert("log_error", payload); err != nil {
-		log.Printf("log error failed: %v", err)
-	}
-}
-
-func (m *mockSupabase) Get(table string, target map[string]string) ([]byte, error) {
-	key, ok := target["Hash"]
-	if !ok {
-		return nil, fmt.Errorf("missing filter key 'hash'")
-	}
-
-	val, exists := m.data[key]
-	if !exists {
-		return nil, fmt.Errorf("no record found for hash: %s", key)
-	}
-
-	result := map[string]string{
-		"Hash":         key,
-		"original_url": val,
-	}
-
-	return json.Marshal(result)
-}
-
-func (m *mockSupabase) Insert(table string, data interface{}) ([]byte, error) {
-	if m.data == nil {
-		m.data = map[string]string{}
-	}
-	u, ok := data.(models.Url)
-	if !ok {
-		return nil, fmt.Errorf("invalid format")
-	}
-	m.data[u.Hash] = u.Url
-	return json.Marshal(u)
-}
-
-func (m *mockSupabase) Delete(table string, filter string) ([]byte, error) {
-	delete(m.data, "12345")
-	return []byte(`{}`), nil
-}
+func (l *mockLogger) LogAction(telegramID int64, action string)      {}
+func (l *mockLogger) LogError(telegramID int64, errMsg, code string) {}
 
 func TestHandlerHashUrl(t *testing.T) {
 	tests := []struct {
@@ -110,152 +86,170 @@ func TestHandlerHashUrl(t *testing.T) {
 		setupCache     func(m *mockCache)
 		setupDB        func(db *mockSupabase)
 		expectedStatus int
-		expectedBody   string
 	}{
 		{
-			name:   "valid GET — found in cache",
+			name:   "redirect from cache",
 			method: http.MethodGet,
-			url:    "/12345",
+			url:    "/abc123",
 			setupCache: func(m *mockCache) {
-				m.Set("12345", "https://cached-url.com", 10*time.Minute)
+				m.Set("abc123", "https://cached.com", 10*time.Minute)
 			},
 			setupDB:        func(db *mockSupabase) {},
-			expectedStatus: http.StatusOK,
-			expectedBody:   "From cache: https://cached-url.com",
+			expectedStatus: http.StatusFound,
 		},
 		{
-			name:   "valid GET — not in cache, found in Supabase",
-			method: http.MethodGet,
-			url:    "/67890",
-			setupCache: func(m *mockCache) {
-			},
+			name:       "redirect from Supabase",
+			method:     http.MethodGet,
+			url:        "/xyz456",
+			setupCache: func(m *mockCache) {},
 			setupDB: func(db *mockSupabase) {
-				db.data["67890"] = "https://supabase-url.com"
+				db.data["xyz456"] = "https://from-db.com"
 			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   "Fetched and cached: https://supabase-url.com",
+			expectedStatus: http.StatusFound,
 		},
 		{
-			name:           "invalid method POST",
+			name:           "missing method",
 			method:         http.MethodPost,
-			url:            "/12345",
+			url:            "/abc123",
 			setupCache:     func(m *mockCache) {},
 			setupDB:        func(db *mockSupabase) {},
 			expectedStatus: http.StatusMethodNotAllowed,
-			expectedBody:   "must be only GET\n",
 		},
 		{
-			name:           "non-numeric URL — not matched",
+			name:           "hash not found",
 			method:         http.MethodGet,
-			url:            "/abc",
+			url:            "/notfound",
+			setupCache:     func(m *mockCache) {},
+			setupDB:        func(db *mockSupabase) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "invalid JSON from Supabase",
+			method:     http.MethodGet,
+			url:        "/badjson",
+			setupCache: func(m *mockCache) {},
+			setupDB: func(db *mockSupabase) {
+				db.bad = true
+				db.data["badjson"] = "https://broken.com"
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "missing hash path param",
+			method:         http.MethodGet,
+			url:            "/",
 			setupCache:     func(m *mockCache) {},
 			setupDB:        func(db *mockSupabase) {},
 			expectedStatus: http.StatusNotFound,
-			expectedBody:   "404 page not found\n",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock := &mockCache{data: make(map[string]string)}
+			cache := &mockCache{data: make(map[string]string)}
 			db := &mockSupabase{data: make(map[string]string)}
 			log := &mockLogger{db: db}
-
-			tt.setupCache(mock)
+			tt.setupCache(cache)
 			tt.setupDB(db)
 
-			handler := NewHashedUrlHandler(mock, db, log)
-
+			handler := NewHashedUrlHandler(cache, db, log)
 			r := mux.NewRouter()
-			r.HandleFunc("/{url:[0-9]+}", handler.HandlerHashUrl)
+			r.HandleFunc("/{url}", handler.HandlerHashUrl)
 
 			req := httptest.NewRequest(tt.method, tt.url, nil)
 			w := httptest.NewRecorder()
 
 			r.ServeHTTP(w, req)
 
-			resp := w.Result()
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.expectedStatus {
-				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
-			}
-
-			body := w.Body.String()
-			if body != tt.expectedBody {
-				t.Errorf("expected body %q, got %q", tt.expectedBody, body)
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)
 			}
 		})
 	}
 }
 
 func TestHandlerUrlShort(t *testing.T) {
-
 	tests := []struct {
 		name           string
 		method         string
 		requestBody    string
+		contentType    string
 		expectedStatus int
-		expectedInBody string
+		expectedText   string
 	}{
 		{
-			name:           "valid POST with correct URL",
+			name:           "valid short URL",
 			method:         http.MethodPost,
-			requestBody:    `{"Url":"https://example.com"}`,
+			requestBody:    `{"Url":"https://valid.com"}`,
+			contentType:    "application/json",
 			expectedStatus: http.StatusOK,
-			expectedInBody: "http://localhost/",
+			expectedText:   "http://localhost/",
+		},
+		{
+			name:           "invalid JSON",
+			method:         http.MethodPost,
+			requestBody:    `{notjson}`,
+			contentType:    "application/json",
+			expectedStatus: http.StatusUnsupportedMediaType,
+			expectedText:   "invalid JSON body",
+		},
+		{
+			name:           "invalid URL format",
+			method:         http.MethodPost,
+			requestBody:    `{"Url":"htp:/bad"}`,
+			contentType:    "application/json",
+			expectedStatus: http.StatusUnsupportedMediaType,
+			expectedText:   "invalid URL",
+		},
+		{
+			name:           "missing Content-Type",
+			method:         http.MethodPost,
+			requestBody:    `{"Url":"https://valid.com"}`,
+			contentType:    "",
+			expectedStatus: http.StatusUnsupportedMediaType,
+		},
+		{
+			name:           "empty body",
+			method:         http.MethodPost,
+			requestBody:    ``,
+			contentType:    "application/json",
+			expectedStatus: http.StatusUnsupportedMediaType,
 		},
 		{
 			name:           "invalid method GET",
 			method:         http.MethodGet,
 			requestBody:    ``,
+			contentType:    "application/json",
 			expectedStatus: http.StatusMethodNotAllowed,
-			expectedInBody: "must be only POST",
-		},
-		{
-			name:           "invalid JSON",
-			method:         http.MethodPost,
-			requestBody:    `not a json`,
-			expectedStatus: http.StatusUnsupportedMediaType,
-			expectedInBody: "invalid JSON body",
-		},
-		{
-			name:           "invalid URL inside JSON",
-			method:         http.MethodPost,
-			requestBody:    `{"Url":"invalid-url"}`,
-			expectedStatus: http.StatusUnsupportedMediaType,
-			expectedInBody: "invalid JSON body",
+			expectedText:   "must be only POST",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, "/short", bytes.NewBufferString(tt.requestBody))
+			if tt.contentType != "" {
+				req.Header.Set("Content-Type", tt.contentType)
+			}
+			req.Header.Set("X-Telegram-ID", "123456")
+
 			w := httptest.NewRecorder()
-
-			db := &mockSupabase{data: make(map[string]string)}
+			db := &mockSupabase{data: map[string]string{}}
 			log := &mockLogger{db: db}
-
 			handler := NewShortdUrlHandler(db, log)
 
 			r := mux.NewRouter()
 			r.HandleFunc("/short", handler.HandlerUrlShort)
+			r.Use(middleware.TelegramIDMiddleware)
 
 			r.ServeHTTP(w, req)
 
-			resp := w.Result()
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.expectedStatus {
-				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)
 			}
 
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(resp.Body)
-			body := buf.String()
-
-			if tt.expectedInBody != "" && !bytes.Contains([]byte(body), []byte(tt.expectedInBody)) {
-				t.Errorf("expected body to contain %q, got %q", tt.expectedInBody, body)
+			if tt.expectedText != "" && !bytes.Contains(w.Body.Bytes(), []byte(tt.expectedText)) {
+				t.Errorf("expected body to contain %q, got %q", tt.expectedText, w.Body.String())
 			}
 		})
 	}

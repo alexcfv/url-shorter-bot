@@ -11,8 +11,8 @@ type Respons struct {
 }
 
 type Url struct {
-	Hash string
-	Url  string
+	Hash string `json:"hash"`
+	Url  string `json:"url"`
 }
 
 type LogAction struct {
@@ -37,8 +37,8 @@ type TelegramBot interface {
 }
 
 var SqlRequests = map[string]string{
-	"users": `
-	CREATE TABLE IF NOT EXISTS users (
+	"users_info": `
+	CREATE TABLE IF NOT EXISTS users_info (
 		uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
 		"Nick_Name" TEXT NOT NULL,
 		"Telegram_id" BIGINT NOT NULL,

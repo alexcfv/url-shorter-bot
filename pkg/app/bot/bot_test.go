@@ -152,6 +152,7 @@ func TestHandleMessages(t *testing.T) {
 				Message: &tgbotapi.Message{
 					Text: tt.inputText,
 					Chat: &tgbotapi.Chat{ID: 12345},
+					From: &tgbotapi.User{ID: 999},
 				},
 			}
 
@@ -203,6 +204,7 @@ func TestRateLimitBehavior(t *testing.T) {
 			Message: &tgbotapi.Message{
 				Text: "https://spam.com",
 				Chat: &tgbotapi.Chat{ID: chatID},
+				From: &tgbotapi.User{ID: 999},
 			},
 		}
 		processMessage(handler, update)
