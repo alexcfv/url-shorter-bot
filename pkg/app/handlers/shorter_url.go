@@ -39,11 +39,11 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 	}
 	telegramID := telegramIDValue.(int64)
 
-	h.logger.LogAction(telegramID, "shortened link")
+	go h.logger.LogAction(telegramID, "shortened link")
 
 	var reqData models.RequestData
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		h.logger.LogError(telegramID, err.Error(), "415")
+		go h.logger.LogError(telegramID, err.Error(), "415")
 		http.Error(w, "invalid JSON body", http.StatusUnsupportedMediaType)
 		return
 	}
@@ -52,12 +52,15 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 		hashUrl := validators.ShortToHash(reqData.Url + strconv.Itoa(int(telegramID)))
 		hashUrlString := strconv.Itoa(int(hashUrl))
 
-		_, err := h.db.Insert("urls", models.Url{Hash: hashUrlString, Url: reqData.Url})
-		if err != nil {
-			h.logger.LogError(telegramID, err.Error(), "405")
-			http.Error(w, err.Error(), http.StatusMethodNotAllowed)
-			return
-		}
+		go func() {
+			_, err := h.db.Insert("urls", models.Url{Hash: hashUrlString, Url: reqData.Url})
+			if err != nil {
+				go h.logger.LogError(telegramID, err.Error(), "405")
+				http.Error(w, err.Error(), http.StatusMethodNotAllowed)
+				return
+			}
+		}()
+
 		response := models.Respons{
 			Url: fmt.Sprintf("%s://%s/%s", models.Protocol, models.Config.HostName, hashUrlString),
 		}

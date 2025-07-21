@@ -61,7 +61,7 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.cache.Set(hashUrl, result.Url, 10*time.Minute)
+	go h.cache.Set(hashUrl, result.Url, 10*time.Minute)
 
 	http.Redirect(w, r, result.Url, http.StatusFound)
 }
