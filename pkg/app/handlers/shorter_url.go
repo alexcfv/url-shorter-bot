@@ -52,14 +52,14 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 		hashUrl := validators.ShortToHash(reqData.Url + strconv.Itoa(int(telegramID)))
 		hashUrlString := strconv.Itoa(int(hashUrl))
 
-		go func() {
-			_, err := h.db.Insert("urls", models.Url{Hash: hashUrlString, Url: reqData.Url})
+		go func(telegramID int64, hashUrlString, Url string, h *UrlShortHandler) {
+			_, err := h.db.Insert("urls", models.Url{Telegram_id: telegramID, Hash: hashUrlString, Url: Url})
 			if err != nil {
-				go h.logger.LogError(telegramID, err.Error(), "405")
-				http.Error(w, err.Error(), http.StatusMethodNotAllowed)
+				go h.logger.LogError(telegramID, err.Error(), "400")
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-		}()
+		}(telegramID, hashUrlString, reqData.Url, h)
 
 		response := models.Respons{
 			Url: fmt.Sprintf("%s://%s/%s", models.Protocol, models.Config.HostName, hashUrlString),

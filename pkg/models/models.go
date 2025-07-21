@@ -11,8 +11,9 @@ type Respons struct {
 }
 
 type Url struct {
-	Hash string `json:"hash"`
-	Url  string `json:"url"`
+	Telegram_id int64  `json:"Telegram_id"`
+	Hash        string `json:"Hash"`
+	Url         string `json:"Url"`
 }
 
 type LogAction struct {
@@ -41,13 +42,14 @@ var SqlRequests = map[string]string{
 	CREATE TABLE IF NOT EXISTS users_info (
 		uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
 		"Nick_Name" TEXT NOT NULL,
-		"Telegram_id" BIGINT NOT NULL,
+		"Telegram_id" BIGINT UNIQUE NOT NULL,
 		created_at TIMESTAMP DEFAULT now()
 	);
 	`,
 	"urls": `
 		CREATE TABLE IF NOT EXISTS urls (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+			"Telegram_id" BIGINT NOT NULL,
 			"Hash" TEXT NOT NULL,
 			"Url" TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT now()
