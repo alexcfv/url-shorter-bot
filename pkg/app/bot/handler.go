@@ -41,13 +41,16 @@ func (h *BotHandler) Run() {
 
 			switch {
 			case text == "/start":
-				_, err := h.Db.Insert("users", models.Users{
-					Telegram_id: telegramID,
-					Nick_Name:   username,
-				})
-				if err != nil {
-					fmt.Println("Error to write user into users table")
-				}
+				go func() {
+					_, err := h.Db.Insert("users", models.Users{
+						Telegram_id: telegramID,
+						Nick_Name:   username,
+					})
+
+					if err != nil {
+						fmt.Println("Error to write user into users table")
+					}
+				}()
 
 				msg := tgbotapi.NewMessage(chatID, "👋 Welcome! Click the button below to shorten a URL.")
 				msg.ReplyMarkup = UrlShortenKeyboard()
