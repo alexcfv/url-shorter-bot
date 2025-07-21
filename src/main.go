@@ -65,7 +65,7 @@ func main() {
 
 	state := bot.NewStateStore()
 
-	handler, err := bot.NewBotHandler(botToken, state, database)
+	handler, err := bot.NewBotHandler(botToken, state, database, logger)
 	if err != nil {
 		log.Fatalf("❌ Failed to create bot: %v", err)
 	}

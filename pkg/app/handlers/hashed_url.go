@@ -50,7 +50,7 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		"Hash": hashUrl,
 	})
 	if err != nil {
-		http.Error(w, "Not found url", http.StatusBadRequest)
+		http.Error(w, "Not found hash", http.StatusBadRequest)
 		return
 	}
 
@@ -62,6 +62,10 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 	}
 
 	go h.cache.Set(hashUrl, result.Url, 10*time.Minute)
+
+	go func(h *UrlHashHandler) {
+		h.logger.LogAction(result.Telegram_id, "users url has been used")
+	}(h)
 
 	http.Redirect(w, r, result.Url, http.StatusFound)
 }

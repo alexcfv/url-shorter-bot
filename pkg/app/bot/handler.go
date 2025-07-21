@@ -7,23 +7,25 @@ import (
 	"strconv"
 	"strings"
 	"url-shorter-bot/pkg/database"
+	"url-shorter-bot/pkg/logger"
 	"url-shorter-bot/pkg/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type BotHandler struct {
-	Bot   models.TelegramBot
-	State *StateStore
-	Db    database.SupabaseClient
+	Bot    models.TelegramBot
+	State  *StateStore
+	Db     database.SupabaseClient
+	Logger logger.Logger
 }
 
-func NewBotHandler(token string, state *StateStore, db database.SupabaseClient) (*BotHandler, error) {
+func NewBotHandler(token string, state *StateStore, db database.SupabaseClient, log logger.Logger) (*BotHandler, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}
-	return &BotHandler{Bot: bot, State: state, Db: db}, nil
+	return &BotHandler{Bot: bot, State: state, Db: db, Logger: log}, nil
 }
 
 func (h *BotHandler) Run() {
@@ -46,9 +48,17 @@ func (h *BotHandler) Run() {
 						Telegram_id: telegramID,
 						Nick_Name:   username,
 					})
-
 					if err != nil {
-						fmt.Println("Error to write user into users_info table")
+						_, secondErr := h.Db.Get("users_info", map[string]string{
+							"Telegram_id": strconv.FormatInt(telegramID, 10),
+						})
+
+						if secondErr != nil {
+							h.Logger.LogError(telegramID, err.Error(), "400")
+							fmt.Println("Error to write user into users_info table")
+						} else {
+							fmt.Println("User already exists")
+						}
 					}
 				}(telegramID, username, h)
 
