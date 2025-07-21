@@ -1,0 +1,141 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+![Go Version](https://img.shields.io/badge/Language-Go-blue)
+
+#### 📝 Author's Note
+
+This is a learning project demonstrating interaction with the Telegram Bot API, Supabase, caching, HTTP, and context.  
+It includes interesting implementations such as passing `telegram_id` into the context via middleware and interacting with it afterward,  
+a simple request limiter, and most importantly — service architecture built using the Dependency Injection (DI) pattern.  
+(Project is still in development, so some issues may be present)
+
+# 🔗 URL Shortener Telegram Bot
+
+A simple and fast **Telegram bot for shortening URLs**, written in Go.  
+You send a link — the bot returns a short one. That’s it.
+
+---
+
+## 📲 How It Works
+
+1. Open the Telegram bot.
+2. Tap **“Shorten URL”**.
+3. Send any link (e.g., `https://example.com/some/very/long/url`).
+4. The bot will return a shortened version like "your_protocol://your_host_name/hash" (e.g., `http://short.ly/128429213`).
+5. Follow the link — and you’ll be redirected to the original site.
+
+---
+
+## ⚙️ Database Pre-Setup
+
+Go to the SQL Editor and paste the following code:
+
+```bash
+create or replace function table_exists(tbl text)
+returns boolean
+language plpgsql
+as $$
+begin
+  return exists (
+    select from pg_tables
+    where tablename = tbl
+  );
+end;
+$$;
+
+grant execute on function table_exists(text) to service_role;
+```
+
+It allows table creation via RPC.
+
+You also need to disable RLS.
+
+---
+
+## 🚀 Launch
+
+The bot can be launched in two ways: manually via YAML or using Docker.
+
+### 🔧 Option 1: `config.yaml` (Manual)
+
+Create a `config.yaml` file in the root of the project:
+
+```yaml
+host_name: "YOUR_HOST_NAME"         # Default: "localhost"
+port: "YOUR_PORT"                   # Default: "80" (Only one of two: "80" for HTTP or "443" for HTTPS)
+tg_key: "YOUR_TELEGRAM_TOKEN"
+db_url: "YOUR_SUPABASE_URL"
+db_key: "YOUR_SUPABASE_API_KEY"
+```
+Then run it manually:
+
+`/url-shorter-bot`
+```bash
+go run src/main
+```
+
+### 🐳 Option 2: Run via Docker
+
+You can also run it using the run.sh script by passing variables:
+
+`/url-shorter-bot`
+```bash
+TG_KEY=your_telegram_token \
+DB_URL=https://your-project.supabase.co \
+DB_KEY=your_supabase_key \
+./run.sh
+```
+If host_name and port are not specified, default values are used:
+
+host_name: localhost
+
+port: 80 (HTTP protocol)
+
+`/url-shorter-bot`
+```bash
+TG_KEY=your_telegram_token \
+DB_URL=https://your-project.supabase.co \
+DB_KEY=your_supabase_key \
+HOST_NAME=your_host_name \
+PORT=443 \
+./run.sh
+```
+
+In this case, port 443 is used, which by default is open for HTTPS requests — so the program assumes you're using HTTPS.
+
+To work correctly, you need a real domain listed in the HostWhitelist and a DNS A record pointing to its IP address.
+
+📌 However, it still works great with the default values in the YAML config using the HTTP protocol.
+
+---
+
+### 🗄️ Database Tables
+
+Tables are created automatically with RLS disabled.
+
+| Table        | Purpose                             |
+| ------------ | ----------------------------------- |
+| `users`      | List of Telegram users              |
+| `urls`       | Stores original and shortened links |
+| `log_error`  | Error log                           |
+| `log_action` | User action log                     |
+
+---
+
+### 🧪 Testing
+
+Only unit tests are written. No integration or end-to-end tests available yet.
+
+Run tests:
+
+`/url-shorter-bot`
+```bash
+go test run ./...
+```
+
+---
+
+### 📝 License
+
+This project is licensed under the MIT License.
+
+You are free to use, modify, and distribute it.
