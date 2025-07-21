@@ -21,6 +21,6 @@ EOF
 
 echo "✅ Generated config.yaml"
 
-docker build -t url-shortener-bot -f builds/Dockerfile .
+docker build -t url-shortener-bot -f ./builds/DockerFile .
 
 docker run --rm -p "$PORT":"$PORT" url-shortener-bot
