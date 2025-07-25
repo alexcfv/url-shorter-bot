@@ -5,8 +5,7 @@
 
 This is a learning project demonstrating interaction with the Telegram Bot API, Supabase, caching, HTTP, and context.  
 It includes interesting implementations such as passing `telegram_id` into the context via middleware and interacting with it afterward,  
-a simple request limiter, and most importantly — service architecture built using the Dependency Injection (DI) pattern.  
-(Project is still in development, so some issues may be present)
+a simple request limiter, and most importantly — service architecture built using the Dependency Injection (DI) pattern. 
 
 # 🔗 URL Shortener Telegram Bot
 
