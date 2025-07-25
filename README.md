@@ -4,8 +4,7 @@
 #### 📝 Author's Note
 
 This is a learning project demonstrating interaction with the Telegram Bot API, Supabase, caching, HTTP, and context.  
-It includes interesting implementations such as passing `telegram_id` into the context via middleware and interacting with it afterward,  
-a simple request limiter, and most importantly — service architecture built using the Dependency Injection (DI) pattern. 
+Service architecture built using the Dependency Injection (DI) pattern. 
 
 # 🔗 URL Shortener Telegram Bot
 
@@ -41,12 +40,29 @@ begin
 end;
 $$;
 
+create or replace function execute_sql(sql text)
+returns void
+language plpgsql
+as $$
+begin
+    execute sql;
+end;
+$$;
+
 grant execute on function table_exists(text) to service_role;
 ```
 
-It allows table creation via RPC.
+It allows table creation via RPC and add functions for execute sql with check table exist.
 
-You also need to disable RLS.
+## ⚙️ Project Pre-Setup
+
+Go to the root folder and paste the following code:
+
+```bash
+go mod install
+```
+
+Download project dependency
 
 ---
 
@@ -69,7 +85,7 @@ Then run it manually:
 
 `/url-shorter-bot`
 ```bash
-go run src/main
+go run src/main.go
 ```
 
 ### 🐳 Option 2: Run via Docker
