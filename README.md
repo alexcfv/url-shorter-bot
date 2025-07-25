@@ -51,10 +51,11 @@ begin
 end;
 $$;
 
+grant execute on function execute_sql(text) to service_role;
 grant execute on function table_exists(text) to service_role;
 ```
 
-It allows table creation via RPC and add functions for execute sql with check table exist.
+It allows table creation via RPC: add functions for execute sql and check table exists.
 
 ## ⚙️ Project Pre-Setup
 
