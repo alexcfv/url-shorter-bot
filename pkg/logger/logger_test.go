@@ -18,8 +18,6 @@ func (m *mockInserter) Insert(table string, data interface{}) ([]byte, error) {
 	return nil, m.returnErr
 }
 
-// --- Tests for LogAction ---
-
 func TestLogAction(t *testing.T) {
 	tests := []struct {
 		name       string

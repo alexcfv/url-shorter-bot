@@ -20,6 +20,25 @@ type BotHandler struct {
 	Logger logger.Logger
 }
 
+func addUserToDb(telegramID int64, username string, h *BotHandler) {
+	_, err := h.Db.Insert("users_info", models.Users{
+		Telegram_id: telegramID,
+		Nick_Name:   username,
+	})
+	if err != nil {
+		_, secondErr := h.Db.Get("users_info", map[string]string{
+			"Telegram_id": strconv.FormatInt(telegramID, 10),
+		})
+
+		if secondErr != nil {
+			h.Logger.LogError(telegramID, err.Error(), "400")
+			fmt.Println("Error to write user into users_info table")
+		} else {
+			fmt.Println("User already exists")
+		}
+	}
+}
+
 func NewBotHandler(token string, state *StateStore, db database.SupabaseClient, log logger.Logger) (*BotHandler, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -43,24 +62,7 @@ func (h *BotHandler) Run() {
 
 			switch {
 			case text == "/start":
-				go func(telegramID int64, username string, h *BotHandler) {
-					_, err := h.Db.Insert("users_info", models.Users{
-						Telegram_id: telegramID,
-						Nick_Name:   username,
-					})
-					if err != nil {
-						_, secondErr := h.Db.Get("users_info", map[string]string{
-							"Telegram_id": strconv.FormatInt(telegramID, 10),
-						})
-
-						if secondErr != nil {
-							h.Logger.LogError(telegramID, err.Error(), "400")
-							fmt.Println("Error to write user into users_info table")
-						} else {
-							fmt.Println("User already exists")
-						}
-					}
-				}(telegramID, username, h)
+				go addUserToDb(telegramID, username, h)
 
 				msg := tgbotapi.NewMessage(chatID, "👋 Welcome! Click the button below to shorten a URL.")
 				msg.ReplyMarkup = UrlShortenKeyboard()

@@ -93,7 +93,7 @@ func (m *SupabaseMigrator) CreateTable(table, request string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 300 {
+	if resp.StatusCode != 200 && resp.StatusCode != 201 && resp.StatusCode != 204 {
 		return fmt.Errorf("failed to create table %s: %s", table, resp.Status)
 	}
 	return nil
