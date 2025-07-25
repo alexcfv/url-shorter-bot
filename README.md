@@ -15,6 +15,8 @@ You send a link — the bot returns a short one. That’s it.
 
 ## 📲 How It Works
 
+Before this you must run the service according to the instructions below
+
 1. Open the Telegram bot.
 2. Tap **“Shorten URL”**.
 3. Send any link (e.g., `https://example.com/some/very/long/url`).
@@ -81,6 +83,10 @@ tg_key: "YOUR_TELEGRAM_TOKEN"
 db_url: "YOUR_SUPABASE_URL"
 db_key: "YOUR_SUPABASE_API_KEY"
 ```
+
+To get a telegram bot token, you must first create it.
+You can do this [here](https://t.me/BotFather)
+
 Then run it manually:
 
 `/url-shorter-bot`
