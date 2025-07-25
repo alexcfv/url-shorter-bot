@@ -27,6 +27,8 @@ Before this you must run the service according to the instructions below
 
 ## ⚙️ Database Pre-Setup
 
+
+Create database in Supabase without any tables.
 Go to the SQL Editor and paste the following code:
 
 ```bash
