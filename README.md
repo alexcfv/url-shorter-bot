@@ -55,6 +55,7 @@ $$;
 
 grant execute on function execute_sql(text) to service_role;
 grant execute on function table_exists(text) to service_role;
+grant create, usage on schema public to service_role;
 ```
 
 It allows table creation via RPC: add functions for execute sql and check table exists.
@@ -84,7 +85,7 @@ host_name: "YOUR_HOST_NAME"         # Default: "localhost"
 port: "YOUR_PORT"                   # Default: "80" (Only one of two: "80" for HTTP or "443" for HTTPS)
 tg_key: "YOUR_TELEGRAM_TOKEN"
 db_url: "YOUR_SUPABASE_URL"
-db_key: "YOUR_SUPABASE_API_KEY"
+db_key: "YOUR_SUPABASE_SERVICE_ROLE_API_KEY"
 ```
 
 To get a telegram bot token, you must first create it.
