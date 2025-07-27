@@ -28,7 +28,8 @@ Before this you must run the service according to the instructions below
 ## ⚙️ Database Pre-Setup
 
 
-Create database in Supabase without any tables.
+Create database in Supabase without any tables,
+In table editor select schema public.
 Go to the SQL Editor and paste the following code:
 
 ```bash
