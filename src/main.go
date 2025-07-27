@@ -127,4 +127,5 @@ func main() {
 	}
 
 	http.ListenAndServe(":"+models.Config.Port, r)
+	fmt.Println("Server listening")
 }

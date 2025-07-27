@@ -6,7 +6,7 @@ import (
 )
 
 func IsValidURL(url string) bool {
-	re := regexp.MustCompile(`^(http|https)://[a-zA-Z0-9.-]+$`)
+	re := regexp.MustCompile(`^(http|https)://.+$`)
 	return re.MatchString(url)
 }
 
