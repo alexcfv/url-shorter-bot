@@ -67,7 +67,7 @@ Go to the root folder and paste the following code:
 
 `/url-shorter-bot`
 ```bash
-go mod install
+go mod tidy
 ```
 
 Download project dependency
