@@ -64,6 +64,7 @@ It allows table creation via RPC: add functions for execute sql and check table 
 
 Go to the root folder and paste the following code:
 
+`/url-shorter-bot`
 ```bash
 go mod install
 ```
