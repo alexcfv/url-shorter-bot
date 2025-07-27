@@ -2,7 +2,6 @@ package bot
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,8 +32,6 @@ func addUserToDb(telegramID int64, username string, h *BotHandler) {
 
 		if secondErr != nil {
 			h.Logger.LogError(telegramID, err.Error(), "400")
-		} else {
-			fmt.Println("User already exists")
 		}
 	}
 }
