@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"url-shorter-bot/pkg/app/validators"
 	"url-shorter-bot/pkg/database"
 	"url-shorter-bot/pkg/logger"
 	"url-shorter-bot/pkg/models"
@@ -32,7 +33,6 @@ func addUserToDb(telegramID int64, username string, h *BotHandler) {
 
 		if secondErr != nil {
 			h.Logger.LogError(telegramID, err.Error(), "400")
-			fmt.Println("Error to write user into users_info table")
 		} else {
 			fmt.Println("User already exists")
 		}
@@ -78,6 +78,7 @@ func (h *BotHandler) Run() {
 				shortURL, err := h.shortenURL(text, telegramID)
 				if err != nil || shortURL == "" {
 					h.Bot.Send(tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL."))
+					go h.Logger.LogError(telegramID, "Error to short url. Invalid url.", "400")
 					continue
 				}
 				if shortURL == "Too Many Request" {
@@ -97,6 +98,10 @@ func (h *BotHandler) Run() {
 }
 
 func (h *BotHandler) shortenURL(originalURL string, telegramID int64) (string, error) {
+	if !validators.IsValidURL(originalURL) {
+		return "", nil
+	}
+
 	client := &http.Client{}
 	requestBody := strings.NewReader(`{"Url": "` + originalURL + `"}`)
 
