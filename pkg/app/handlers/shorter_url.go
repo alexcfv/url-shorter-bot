@@ -62,7 +62,7 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 		}(telegramID, hashUrlString, reqData.Url, h)
 
 		response := models.Respons{
-			Url: fmt.Sprintf("%s://%s/%s", models.Protocol, models.Config.HostName, hashUrlString),
+			Url: fmt.Sprintf("%s://%s%s/%s", models.Protocol, models.Config.HostName, models.PortForUrl, hashUrlString),
 		}
 
 		w.Header().Set("Content-Type", "application/json")

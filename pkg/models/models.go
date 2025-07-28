@@ -78,3 +78,5 @@ type SupabaseResponse []Url
 var Config ConfigStruct
 
 var Protocol string
+
+var PortForUrl string

@@ -55,7 +55,6 @@ func (h *BotHandler) Run() {
 		if update.Message != nil {
 			chatID := update.Message.Chat.ID
 			text := update.Message.Text
-			typeMsg := update.Message.Chat.Type
 			telegramID := update.Message.From.ID
 			username := update.Message.From.UserName
 
@@ -74,7 +73,7 @@ func (h *BotHandler) Run() {
 
 			case h.State.Get(chatID) == "awaiting_url":
 				h.State.Clear(chatID)
-				shortURL, err := h.shortenURL(text, typeMsg, telegramID)
+				shortURL, err := h.shortenURL(text, telegramID)
 				if err != nil || shortURL == "" {
 					h.Bot.Send(tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL."))
 					go h.Logger.LogError(telegramID, err.Error(), "400")
@@ -96,9 +95,9 @@ func (h *BotHandler) Run() {
 	}
 }
 
-func (h *BotHandler) shortenURL(originalURL, typeMsg string, telegramID int64) (string, error) {
+func (h *BotHandler) shortenURL(originalURL string, telegramID int64) (string, error) {
 	if !validators.IsValidURL(originalURL) {
-		return "", errors.New("Error to short url. Invalid url, type: " + typeMsg)
+		return "", errors.New("Error to short url. Invalid url: " + originalURL)
 	}
 
 	client := &http.Client{}

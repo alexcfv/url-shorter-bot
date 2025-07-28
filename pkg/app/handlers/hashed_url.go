@@ -50,7 +50,7 @@ func (h *UrlHashHandler) HandlerHashUrl(w http.ResponseWriter, r *http.Request) 
 		"Hash": hashUrl,
 	})
 	if err != nil {
-		http.Error(w, "Not found hash", http.StatusBadRequest)
+		http.NotFound(w, r)
 		return
 	}
 
