@@ -33,9 +33,12 @@ func ReadConfig() {
 	switch Config.Port {
 	case "80":
 		Protocol = "http"
+		PortForUrl = ""
 	case "443":
 		Protocol = "https"
+		PortForUrl = ""
 	default:
-		log.Fatalln("Port must be only 80 or 443 because http and https use these ports")
+		Protocol = "http"
+		PortForUrl = ":" + Config.Port
 	}
 }

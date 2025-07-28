@@ -76,7 +76,6 @@ func main() {
 	go middleware.CleanupVisitors()
 
 	port := models.Config.Port
-	addr := ":" + port
 	domain := models.Config.HostName
 
 	shorterUrlHandler := handlers.NewShortdUrlHandler(database, logger)
@@ -118,14 +117,13 @@ func main() {
 			log.Fatalf("❌ HTTPS server failed: %v", err)
 		}
 
-	case "80":
-		if err := http.ListenAndServe(addr, r); err != nil {
-			log.Fatalf("❌ HTTP server failed: %v", err)
-		}
 	default:
-		log.Fatalf("❌ Unsupported port: %s. Only 80 and 443 are allowed.", port)
+		if err := http.ListenAndServe(":"+models.Config.Port, r); err != nil {
+			log.Fatalf("❌ HTTP challenge server failed: %v", err)
+		}
 	}
 
+	fmt.Println("Server is listening")
 	http.ListenAndServe(":"+models.Config.Port, r)
 	fmt.Println("Server listening")
 }

@@ -121,7 +121,7 @@ func TestHandlerHashUrl(t *testing.T) {
 			url:            "/notfound",
 			setupCache:     func(m *mockCache) {},
 			setupDB:        func(db *mockSupabase) {},
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:       "invalid JSON from Supabase",

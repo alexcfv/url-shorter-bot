@@ -220,7 +220,6 @@ func TestRateLimitBehavior(t *testing.T) {
 	}
 }
 
-// Извлечённая логика из Run(), чтобы тестировать отдельно
 func processMessage(h *BotHandler, update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	text := update.Message.Text
