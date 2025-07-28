@@ -139,7 +139,7 @@ To work correctly, you need a real domain listed in the HostWhitelist and a DNS 
 
 ### 🗄️ Database Tables
 
-Tables are created automatically with RLS disabled.
+Tables are created automatically with RLS.
 
 | Table        | Purpose                             |
 | ------------ | ----------------------------------- |
