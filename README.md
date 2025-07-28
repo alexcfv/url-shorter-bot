@@ -110,7 +110,7 @@ You can also run it using the run.sh script by passing variables:
 ```bash
 TG_KEY=your_telegram_token \
 DB_URL=https://your-project.supabase.co \
-DB_KEY=your_supabase_key \
+DB_KEY=your_supabase_service_role_key \
 ./run.sh
 ```
 If host_name and port are not specified, default values are used:
@@ -123,7 +123,7 @@ port: 80 (HTTP protocol)
 ```bash
 TG_KEY=your_telegram_token \
 DB_URL=https://your-project.supabase.co \
-DB_KEY=your_supabase_key \
+DB_KEY=your_supabase_service_role_key \
 HOST_NAME=your_host_name \
 PORT=443 \
 ./run.sh
