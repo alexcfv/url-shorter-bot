@@ -84,7 +84,7 @@ Create a `config.yaml` file in the root of the project:
 
 ```yaml
 host_name: "YOUR_HOST_NAME"         # Default: "localhost"
-port: "YOUR_PORT"                   # Default: "80" (Only one of two: "80" for HTTP or "443" for HTTPS)
+port: "YOUR_PORT"                   # Default: "80" ("80" for HTTP or "443" for HTTPS)
 tg_key: "YOUR_TELEGRAM_TOKEN"
 db_url: "YOUR_SUPABASE_URL"
 db_key: "YOUR_SUPABASE_SERVICE_ROLE_API_KEY"
@@ -131,9 +131,11 @@ PORT=443 \
 
 In this case, port 443 is used, which by default is open for HTTPS requests — so the program assumes you're using HTTPS.
 
-To work correctly, you need a real domain listed in the HostWhitelist and a DNS A record pointing to its IP address.
+### 📌 To work correctly, you need a real domain listed in the HostWhitelist and a DNS A record pointing to its IP address.
 
-📌 However, it still works great with the default values in the YAML config using the HTTP protocol.
+### 📌 You can also specify your custom port, but in response you will receive not http://your_domain/short_url, but http://your_domain:your_port/short_url
+
+### 📌 However, it still works great with the default values in the YAML config using the HTTP protocol.
 
 ---
 
