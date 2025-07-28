@@ -4,9 +4,7 @@
 #### 📝 Author's Note
 
 This is a learning project demonstrating interaction with the Telegram Bot API, Supabase, caching, HTTP, and context.  
-It includes interesting implementations such as passing `telegram_id` into the context via middleware and interacting with it afterward,  
-a simple request limiter, and most importantly — service architecture built using the Dependency Injection (DI) pattern.  
-(Project is still in development, so some issues may be present)
+Service architecture built using the Dependency Injection (DI) pattern. 
 
 # 🔗 URL Shortener Telegram Bot
 
@@ -16,6 +14,8 @@ You send a link — the bot returns a short one. That’s it.
 ---
 
 ## 📲 How It Works
+
+Before this you must run the service according to the instructions below
 
 1. Open the Telegram bot.
 2. Tap **“Shorten URL”**.
@@ -27,6 +27,9 @@ You send a link — the bot returns a short one. That’s it.
 
 ## ⚙️ Database Pre-Setup
 
+
+Create database in Supabase without any tables,
+In table editor select schema public.
 Go to the SQL Editor and paste the following code:
 
 ```bash
@@ -42,12 +45,32 @@ begin
 end;
 $$;
 
+create or replace function execute_sql(sql text)
+returns void
+language plpgsql
+as $$
+begin
+    execute sql;
+end;
+$$;
+
+grant execute on function execute_sql(text) to service_role;
 grant execute on function table_exists(text) to service_role;
+grant create, usage on schema public to service_role;
 ```
 
-It allows table creation via RPC.
+It allows table creation via RPC: add functions for execute sql and check table exists.
 
-You also need to disable RLS.
+## ⚙️ Project Pre-Setup
+
+Go to the root folder and paste the following code:
+
+`/url-shorter-bot`
+```bash
+go mod tidy
+```
+
+Download project dependency
 
 ---
 
@@ -64,13 +87,19 @@ host_name: "YOUR_HOST_NAME"         # Default: "localhost"
 port: "YOUR_PORT"                   # Default: "80" (Only one of two: "80" for HTTP or "443" for HTTPS)
 tg_key: "YOUR_TELEGRAM_TOKEN"
 db_url: "YOUR_SUPABASE_URL"
-db_key: "YOUR_SUPABASE_API_KEY"
+db_key: "YOUR_SUPABASE_SERVICE_ROLE_API_KEY"
 ```
+
+You can get the service role key like this in Supabase project: Project settings -> Api Keys -> Legacy Api keys -> sevice_role
+
+To get a telegram bot token, you must first create it.
+You can do this [here](https://t.me/BotFather)
+
 Then run it manually:
 
 `/url-shorter-bot`
 ```bash
-go run src/main
+go run src/main.go
 ```
 
 ### 🐳 Option 2: Run via Docker
