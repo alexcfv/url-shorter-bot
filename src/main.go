@@ -126,6 +126,6 @@ func main() {
 		log.Fatalf("❌ Unsupported port: %s. Only 80 and 443 are allowed.", port)
 	}
 
-	http.ListenAndServe(":"+models.Config.Port, r)
 	fmt.Println("Server listening")
+	http.ListenAndServe(":"+models.Config.Port, r)
 }
