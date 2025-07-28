@@ -52,6 +52,14 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 		hashUrl := validators.ShortToHash(reqData.Url + strconv.Itoa(int(telegramID)))
 		hashUrlString := strconv.Itoa(int(hashUrl))
 
+		_, err := h.db.Get("urls", map[string]string{
+			"Hash": hashUrlString,
+		})
+		if err == nil {
+			makeResponse(models.Protocol, models.Config.HostName, models.PortForUrl, hashUrlString, w)
+			return
+		}
+
 		go func(telegramID int64, hashUrlString, Url string, h *UrlShortHandler) {
 			_, err := h.db.Insert("urls", models.Url{Telegram_id: telegramID, Hash: hashUrlString, Url: Url})
 			if err != nil {
@@ -61,14 +69,18 @@ func (h *UrlShortHandler) HandlerUrlShort(w http.ResponseWriter, r *http.Request
 			}
 		}(telegramID, hashUrlString, reqData.Url, h)
 
-		response := models.Respons{
-			Url: fmt.Sprintf("%s://%s%s/%s", models.Protocol, models.Config.HostName, models.PortForUrl, hashUrlString),
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		makeResponse(models.Protocol, models.Config.HostName, models.PortForUrl, hashUrlString, w)
 	} else {
 		http.Error(w, "invalid URL", http.StatusUnsupportedMediaType)
 	}
+}
+
+func makeResponse(Protocol, HostName, PortForUrl, hashUrlString string, w http.ResponseWriter) {
+	response := models.Respons{
+		Url: fmt.Sprintf("%s://%s%s/%s", Protocol, HostName, PortForUrl, hashUrlString),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
