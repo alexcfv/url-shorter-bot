@@ -115,14 +115,15 @@ func main() {
 
 		if err := server.ListenAndServeTLS("", ""); err != nil {
 			log.Fatalf("❌ HTTPS server failed: %v", err)
+		} else {
+			fmt.Println("Server is listening")
 		}
 
 	default:
 		if err := http.ListenAndServe(":"+models.Config.Port, r); err != nil {
 			log.Fatalf("❌ HTTP challenge server failed: %v", err)
+		} else {
+			fmt.Println("Server is listening")
 		}
 	}
-
-	fmt.Println("Server is listening")
-	http.ListenAndServe(":"+models.Config.Port, r)
 }
