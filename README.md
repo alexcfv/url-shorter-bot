@@ -90,7 +90,7 @@ db_url: "YOUR_SUPABASE_URL"
 db_key: "YOUR_SUPABASE_SERVICE_ROLE_API_KEY"
 ```
 
-You can get the service role key like this in Supabase project: Project settings -> Api Keys -> Legacy Api keys -> sevice_role
+You can get the service role key like this in Supabase project: Project settings -> Api Keys -> Api keys -> sevice_role
 
 To get a telegram bot token, you must first create it.
 You can do this [here](https://t.me/BotFather)
@@ -110,7 +110,7 @@ You can also run it using the run.sh script by passing variables:
 ```bash
 TG_KEY=your_telegram_token \
 DB_URL=https://your-project.supabase.co \
-DB_KEY=your_supabase_key \
+DB_KEY=your_supabase_service_role_key \
 ./run.sh
 ```
 If host_name and port are not specified, default values are used:
@@ -123,7 +123,7 @@ port: 80 (HTTP protocol)
 ```bash
 TG_KEY=your_telegram_token \
 DB_URL=https://your-project.supabase.co \
-DB_KEY=your_supabase_key \
+DB_KEY=your_supabase_service_role_key \
 HOST_NAME=your_host_name \
 PORT=443 \
 ./run.sh
@@ -139,7 +139,7 @@ To work correctly, you need a real domain listed in the HostWhitelist and a DNS 
 
 ### 🗄️ Database Tables
 
-Tables are created automatically with RLS disabled.
+Tables are created automatically with RLS.
 
 | Table        | Purpose                             |
 | ------------ | ----------------------------------- |
