@@ -1,16 +1,17 @@
+# 🔗 URL Shortener Telegram Bot
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 ![Go Version](https://img.shields.io/badge/Language-Go-blue)
 [![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue.svg)](https://core.telegram.org/bots)
+[![Platform](https://img.shields.io/badge/platform-All-lightgrey)](#)
+
+A simple and fast **Telegram bot for shortening URLs**, written in Go.  
+You send a link — the bot returns a short one. That’s it.
 
 #### 📝 Author's Note
 
 This is a learning project demonstrating interaction with the Telegram Bot API, Supabase, caching, HTTP, and context.  
 Service architecture built using the Dependency Injection (DI) pattern. 
-
-# 🔗 URL Shortener Telegram Bot
-
-A simple and fast **Telegram bot for shortening URLs**, written in Go.  
-You send a link — the bot returns a short one. That’s it.
 
 ---
 
