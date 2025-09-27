@@ -49,6 +49,7 @@ var SqlRequests = map[string]string{
 	"urls": `
 		CREATE TABLE IF NOT EXISTS urls (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+			user_uuid uuid NOT NULL REFERENCES users_info(uuid) ON DELETE CASCADE,
 			"Telegram_id" BIGINT NOT NULL,
 			"Hash" TEXT NOT NULL,
 			"Url" TEXT NOT NULL,
@@ -58,6 +59,7 @@ var SqlRequests = map[string]string{
 	"log_action": `
 		CREATE TABLE IF NOT EXISTS log_action (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+			user_uuid uuid NOT NULL REFERENCES users_info(uuid) ON DELETE CASCADE,
 			"Telegram_id" BIGINT NOT NULL,
 			"Action" TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT now()
@@ -66,6 +68,7 @@ var SqlRequests = map[string]string{
 	"log_error": `
 		CREATE TABLE IF NOT EXISTS log_error (
 			uuid uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+			user_uuid uuid NOT NULL REFERENCES users_info(uuid) ON DELETE CASCADE,
 			"Telegram_id" BIGINT NOT NULL,
 			"Error" TEXT NOT NULL,
 			"Error_code" TEXT NOT NULL,
