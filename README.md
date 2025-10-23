@@ -97,7 +97,7 @@ db_key: "YOUR_SUPABASE_SERVICE_ROLE_API_KEY"
 You can get the service role key like this in Supabase project: Project settings -> Api Keys -> Api keys -> sevice_role
 
 To get a telegram bot token, you must first create it.
-You can do this [here](https://t.me/BotFather)
+You can do it [here](https://t.me/BotFather)
 
 Then run it manually:
 
