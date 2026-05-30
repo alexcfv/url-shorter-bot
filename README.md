@@ -1,4 +1,4 @@
-# 🔗 URL Shortener Telegram Bot
+# URL Shortener Telegram Bot
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 ![Go Version](https://img.shields.io/badge/Language-Go-blue)
@@ -10,14 +10,14 @@
 A simple and fast **Telegram bot for shortening URLs**, written in Go.  
 You send a link — the bot returns a short one. That’s it.
 
-#### 📝 Author's Note
+#### Author's Note
 
 This is a learning project demonstrating interaction with the Telegram Bot API, Supabase, caching, HTTP, and context.  
 Service architecture built using the Dependency Injection (DI) pattern. 
 
 ---
 
-## 📲 How It Works
+## How It Works
 
 Before this you must run the service according to the instructions below
 
@@ -29,7 +29,7 @@ Before this you must run the service according to the instructions below
 
 ---
 
-## ⚙️ Database Pre-Setup
+## Database Pre-Setup
 
 
 Create database in Supabase without any tables,
@@ -65,7 +65,7 @@ grant create, usage on schema public to service_role;
 
 It allows table creation via RPC: add functions for execute sql and check table exists.
 
-## ⚙️ Project Pre-Setup
+## Project Pre-Setup
 
 Go to the root folder and paste the following code:
 
@@ -78,11 +78,11 @@ Download project dependency
 
 ---
 
-## 🚀 Launch
+## Launch
 
 The bot can be launched in two ways: manually via YAML or using Docker.
 
-### 🔧 Option 1: `config.yaml` (Manual)
+### Option 1: `config.yaml` (Manual)
 
 Create a `config.yaml` file in the root of the project:
 
@@ -106,7 +106,7 @@ Then run it manually:
 go run src/main.go
 ```
 
-### 🐳 Option 2: Run via Docker
+### Option 2: Run via Docker
 
 You can also run it using the run.sh script by passing variables:
 
@@ -143,7 +143,7 @@ In this case, port 443 is used, which by default is open for HTTPS requests — 
 
 ---
 
-### 🗄️ Database Tables
+### Database Tables
 
 Tables are created automatically with RLS.
 
@@ -156,7 +156,7 @@ Tables are created automatically with RLS.
 
 ---
 
-### 🧪 Testing
+### Testing
 
 Only unit tests are written. No integration or end-to-end tests available yet.
 
